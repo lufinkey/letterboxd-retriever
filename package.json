@@ -7,7 +7,8 @@
 	"scripts": {
 		"test": "tsc && node dist/test.js",
 		"build": "tsc",
-		"lint": "eslint . --ext .ts"
+		"lint": "eslint . --ext .ts",
+		"postinstall": "tsc"
 	},
 	"keywords": [
 		"letterboxd"
