@@ -1,0 +1,23 @@
+{
+	"name": "letterboxd-retriever",
+	"version": "1.0.0",
+	"description": "An unofficial library for retrieving data from letterboxd",
+	"main": "/dist/index.js",
+	"scripts": {
+		"test": "tsc && node dist/test.js",
+		"build": "tsc",
+		"lint": "eslint . --ext .ts"
+	},
+	"keywords": [
+		"letterboxd"
+	],
+	"author": "Luis Finke (luisfinke@gmail.com)",
+	"license": "ISC",
+	"dependencies": {
+		"cheerio": "^1.0.0-rc.12"
+	},
+	"devDependencies": {
+		"@types/node": "^22.1.0",
+		"typescript": "^5.5.4"
+	}
+}
