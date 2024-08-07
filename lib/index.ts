@@ -12,7 +12,7 @@ export const fetchUserFollowingFeed = async (username: string, options: {after?:
 		username: username
 	});
 	// fetch csrf if needed
-	let csrf = options.csrf;
+	let csrf: string | null | undefined = options.csrf;
 	if(!csrf) {
 		const res = await fetch(feedPageURL);
 		if(!res.ok) {
@@ -20,6 +20,9 @@ export const fetchUserFollowingFeed = async (username: string, options: {after?:
 		}
 		const resData = await res.text();
 		csrf = lbparse.parseCSRF(resData);
+		if(!csrf) {
+			throw new Error("Failed to fetch CSRF");
+		}
 	}
 	// fetch activity feed
 	const feedAjaxURL = lburls.followingActivityFeedAjaxURL({

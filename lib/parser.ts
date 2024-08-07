@@ -97,8 +97,11 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 		try {
 			// parse user info
 			const userHref = node$.find('.table-activity-user > a').attr('href');
-			const username = trimString(userHref, '/');
-			if(username.indexOf('/') != -1) {
+			const username = userHref ? trimString(userHref, '/') : undefined;
+			if(!username) {
+				console.warn(`Failed to parse username for entry ${entryIndex}`);
+			}
+			else if(username.indexOf('/') != -1) {
 				console.warn(`Parsed user slug ${username} from href ${userHref} contains a slash on entry ${entryIndex}`);
 			}
 			const userImageElement = node$.find(".table-activity-user");
@@ -121,28 +124,28 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				if(userLinkText) {
 					userDisplayName = userLinkText;
 				}
-				const actionText = $(userLink[0].nextSibling).text().trim().toLowerCase();
+				const actionText = userLink[0]?.nextSibling ? $(userLink[0].nextSibling).text().trim().toLowerCase() : undefined;
 				switch(actionText) {
 					case 'added': {
 						if(objectLink.index() === -1) {
 							console.warn(`Missing object link on entry index ${entryIndex}`);
 						}
-						const afterObjectText = $(objectLink[0].nextSibling).text().trim().toLowerCase();
+						const afterObjectText = objectLink[0]?.nextSibling ? $(objectLink[0].nextSibling).text().trim().toLowerCase() : undefined;
 						const object2Link = activityDescr.find('.activity-summary > a:nth-of-type(3)');
 						const object2Text = object2Link.text().trim().toLowerCase();
 						if(afterObjectText == 'to' && object2Text.endsWith(' watchlist')) {
 							// added to watchlist
 							actionType = ActivityActionType.AddedToWatchlist;
 							const filmHref = objectLink.attr('href');
-							let filmSlug = trimString(filmHref, '/');
-							let slashIndex = filmSlug.lastIndexOf('/');
+							let filmSlug = filmHref ? trimString(filmHref, '/') : undefined;
+							let slashIndex = filmSlug?.lastIndexOf('/') ?? -1;
 							if(slashIndex !== -1) {
-								filmSlug = filmSlug.substring(slashIndex+1);
+								filmSlug = filmSlug!.substring(slashIndex+1);
 							}
 							film = {
 								name: objectLink.text(),
-								slug: filmSlug,
-								href: filmHref
+								slug: filmSlug!,
+								href: filmHref!
 							};
 						}
 					}
@@ -168,7 +171,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								rating = parseRatingString(ratingStr);
 							}
 							const reviewHref = objectLink.attr('href');
-							const reviewHrefParts = trimString(reviewHref, '/').split('/');
+							const reviewHrefParts = reviewHref ? trimString(reviewHref, '/').split('/') : [];
 							const filmSlug = reviewHrefParts[2];
 							if(reviewHrefParts[1] !== 'film') {
 								console.warn(`Review href ${reviewHref} didn't have expected structure`);
@@ -179,7 +182,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 							viewing = {
 								userDisplayName: reviewerName,
 								username: userSlug,
-								href: reviewHref,
+								href: reviewHref!,
 								rating: rating
 							};
 							film = {
@@ -200,7 +203,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				const filmImgSrc = activityViewing.find('.film-poster img').attr('src');
 				const filmReviewLink = activityViewing.find('.film-detail-content > h2 > a');
 				const filmReviewHref = filmReviewLink.attr('href');
-				const filmReviewHrefParts = trimString(filmReviewHref, '/').split('/');
+				const filmReviewHrefParts = filmReviewHref ? trimString(filmReviewHref, '/').split('/') : [];
 				const filmSlug = filmReviewHrefParts[2];
 				if(filmReviewHrefParts[1] !== 'film') {
 					console.warn(`Review href ${filmReviewHref} didn't have expected structure`);
@@ -216,15 +219,18 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				const contextTag = activityViewing.find('.film-detail-content .attribution > .context');
 				const viewerLink = contextTag.children('a');
 				const viewerHref = viewerLink.attr('href');
-				const viewerSlug = trimString(viewerHref, '/');
-				if(viewerSlug.indexOf('/') != -1) {
+				const viewerSlug = viewerHref ? trimString(viewerHref, '/') : undefined;
+				if(!viewerSlug) {
+					console.warn(`Failed to parse username for entry ${entryIndex}`);
+				}
+				else if(viewerSlug.indexOf('/') != -1) {
 					console.warn(`Parsed user slug ${viewerSlug} from href ${viewerHref} contains a slash on entry ${entryIndex}`);
 				}
 				actionType = $(lastFromArray(contextTag[0].childNodes)).text().trim().toLowerCase() as ActivityActionType;
 				viewing = {
 					userDisplayName: viewerLink.text(),
-					username: viewerSlug,
-					href: filmReviewHref,
+					username: viewerSlug!,
+					href: filmReviewHref!,
 					rating: rating,
 					liked: activityViewing.find('.icon-liked').index() !== -1,
 					text: activityViewing.find('.film-detail-content .body-text > p').toArray().map((p) => $(p).text()).join("\n")
@@ -241,18 +247,19 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			}
 			// parse other item properties
 			const id = node$.attr('data-activity-id');
-			const time = new Date(node$.children('time').attr('datetime'));
+			const dateStr = node$.children('time').attr('datetime');
+			const time = dateStr ? new Date(dateStr) : undefined;
 			// add entry
 			feedItems.push({
-				id: id,
-				userImageURL: userImageSrc,
-				userHref: userHref,
-				username: username,
-				userDisplayName: userDisplayName,
-				action: actionType,
+				id: id!,
+				userImageURL: userImageSrc!,
+				userHref: userHref!,
+				username: username!,
+				userDisplayName: userDisplayName!,
+				action: actionType!,
 				film: film,
 				viewing: viewing,
-				time: time
+				time: time!
 			});
 		} catch(error) {
 			console.error(`Failed to parse entry ${entryIndex}`);
