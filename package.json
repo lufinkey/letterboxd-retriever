@@ -2,7 +2,8 @@
 	"name": "letterboxd-retriever",
 	"version": "1.0.0",
 	"description": "An unofficial library for retrieving data from letterboxd",
-	"main": "/dist/index.js",
+	"main": "dist/lib/index.js",
+	"types": "dist/lib/index.d.ts",
 	"scripts": {
 		"test": "tsc && node dist/test.js",
 		"build": "tsc",
