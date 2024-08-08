@@ -104,6 +104,8 @@ export interface FilmPageData {
 	id: string;
 	slug: string;
 	type: 'film';
+	tagline: string;
+	description: string;
 	tmdb: {
 		id: string;
 		type: 'movie'
