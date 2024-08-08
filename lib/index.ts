@@ -34,7 +34,10 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string})): Prom
 	};
 };
 
-export const getUserFollowingFeed = async (username: string, options: {after?: number, csrf?: string} = {}): Promise<ActivityFeedPage> => {
+export const getUserFollowingFeed = async (username: string, options: {
+	after?: number | string | undefined,
+	csrf?: string | undefined
+} = {}): Promise<ActivityFeedPage> => {
 	const feedPageURL = lburls.followingActivityFeedPageURL({
 		username: username
 	});

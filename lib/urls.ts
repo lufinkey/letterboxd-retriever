@@ -43,7 +43,7 @@ export const followingActivityFeedPageURL = (options: {
 export const followingActivityFeedAjaxURL = (options: {
     username: string,
     csrf: string,
-    after?: number | null,
+    after?: number | string | undefined,
 }) => {
 	let url = `${BASE_URL}/ajax/activity-pagination/${options.username}/following/?__csrf=${options.csrf}`;
     if(options.after != null) {
