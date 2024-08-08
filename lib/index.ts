@@ -1,11 +1,38 @@
 
+import * as cheerio from 'cheerio';
 import {
+	FilmInfo,
+	FilmPageData,
+	FilmLDJson,
 	ActivityFeedPage,
 	ActivityFeedEntry } from './types';
 import * as lburls from './urls';
 import * as lbparse from './parser';
 
 export * from './types';
+
+export const fetchFilmInfo = async (film: ({slug: string} | {href: string})): Promise<FilmInfo> => {
+	let url: string;
+	if('slug' in film && film.slug) {
+		url = lburls.filmPageURLFromSlug(film.slug);
+	} else if('href' in film && film.href) {
+		url = lburls.filmPageURLFromSlug(film.href);
+	} else {
+		throw new Error(`No slug or href was provided`);
+	}
+	const res = await fetch(url);
+	if(!res.ok) {
+		throw new Error(res.statusText);
+	}
+	const resData = await res.text();
+	const $ = cheerio.load(resData);
+	const ldJson: FilmLDJson = lbparse.parseLdJson($);
+	const pageData = lbparse.parseFilmPage($);
+	return {
+		pageData,
+		ldJson
+	};
+};
 
 export const fetchUserFollowingFeed = async (username: string, options: {after?: number, csrf?: string} = {}): Promise<ActivityFeedPage> => {
 	const feedPageURL = lburls.followingActivityFeedPageURL({

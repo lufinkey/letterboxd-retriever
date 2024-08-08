@@ -4,6 +4,7 @@ import {
 	DataNode
 } from 'domhandler';
 import {
+	FilmPageData,
 	ActivityActionType,
 	ActivityFeedEntry,
 	ActivityFeedFilm, 
@@ -13,6 +14,55 @@ import {
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
 const CSRF_TEXT_SUFFIX = "'";
 const POSESSIVE_TEXT_SUFFIX1 = "’s";
+const LDJSON_PREFIX = '/* <![CDATA[ */';
+const LDJSON_SUFFIX = '/* ]]> */';
+
+export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageData => {
+	let $: cheerio.CheerioAPI;
+	if(typeof(pageData) === 'string') {
+		$ = cheerio.load(pageData);
+	} else {
+		$ = pageData;
+	}
+	const body = $('body');
+	const backdropTag = $('#backdrop');
+	return {
+		id: backdropTag.attr('data-film-id')!,
+		slug: backdropTag.attr('data-film-slug')!,
+		type: body.attr('data-type') as any,
+		tmdb: {
+			id: body.attr('data-tmdb-id')!,
+			type: body.attr('data-tmdb-type') as any
+		},
+		backdrop: {
+			default: backdropTag.attr('data-backdrop')!,
+			retina: backdropTag.attr('data-backdrop2x')!,
+			mobile: backdropTag.attr('data-backdrop-mobile')!
+		}
+	};
+}
+
+export const parseLdJson = (pageData: cheerio.CheerioAPI | string): any => {
+	let $: cheerio.CheerioAPI;
+	if(typeof(pageData) === 'string') {
+		$ = cheerio.load(pageData);
+	} else {
+		$ = pageData;
+	}
+	const scriptTag = $('script[type="application/ld+json"]');
+	let ldJsonString = scriptTag.text().trim();
+	if(ldJsonString.startsWith(LDJSON_PREFIX)) {
+		ldJsonString = ldJsonString.substring(LDJSON_PREFIX.length);
+	}
+	if(ldJsonString.endsWith(LDJSON_SUFFIX)) {
+		ldJsonString = ldJsonString.substring(0, ldJsonString.length - LDJSON_SUFFIX.length);
+	}
+	try {
+		return JSON.parse(ldJsonString);
+	} catch(error) {
+		return eval(ldJsonString);
+	}
+};
 
 export const parseCSRF = (pageData: cheerio.CheerioAPI | string) => {
 	let $: cheerio.CheerioAPI;

@@ -19,6 +19,21 @@ export interface PersonalActivityFeedOptions {
 	incomingActivity?: boolean;
 }
 
+export const urlFromHref = (href: string) => {
+	if(href.indexOf(':') !== -1) {
+		return href;
+	}
+	if(!href.startsWith('/')) {
+		console.warn(`href ${href} is not an absolute path`);
+		return `${BASE_URL}/${href}`;
+	}
+	return `${BASE_URL}${href}`;
+};
+
+export const filmPageURLFromSlug = (slug: string) => {
+	return `${BASE_URL}/film/${slug}`;
+};
+
 export const followingActivityFeedPageURL = (options: {
 	username: string
 }) => {
