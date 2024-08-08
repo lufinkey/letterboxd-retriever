@@ -11,12 +11,12 @@ import * as lbparse from './parser';
 
 export * from './types';
 
-export const fetchFilmInfo = async (film: ({slug: string} | {href: string})): Promise<FilmInfo> => {
+export const getFilmInfo = async (film: ({slug: string} | {href: string})): Promise<FilmInfo> => {
 	let url: string;
 	if('slug' in film && film.slug) {
 		url = lburls.filmPageURLFromSlug(film.slug);
 	} else if('href' in film && film.href) {
-		url = lburls.filmPageURLFromSlug(film.href);
+		url = lburls.urlFromHref(film.href);
 	} else {
 		throw new Error(`No slug or href was provided`);
 	}
@@ -34,7 +34,7 @@ export const fetchFilmInfo = async (film: ({slug: string} | {href: string})): Pr
 	};
 };
 
-export const fetchUserFollowingFeed = async (username: string, options: {after?: number, csrf?: string} = {}): Promise<ActivityFeedPage> => {
+export const getUserFollowingFeed = async (username: string, options: {after?: number, csrf?: string} = {}): Promise<ActivityFeedPage> => {
 	const feedPageURL = lburls.followingActivityFeedPageURL({
 		username: username
 	});

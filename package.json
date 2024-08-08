@@ -5,7 +5,7 @@
 	"main": "dist/lib/index.js",
 	"types": "dist/lib/index.d.ts",
 	"scripts": {
-		"test": "tsc && node dist/test.js",
+		"test": "tsc && node dist/lib/test.js",
 		"build": "tsc",
 		"lint": "eslint . --ext .ts",
 		"postinstall": "tsc"
