@@ -59,6 +59,9 @@ export const parseLdJson = (pageData: cheerio.CheerioAPI | string): any => {
 	if(ldJsonString.endsWith(LDJSON_SUFFIX)) {
 		ldJsonString = ldJsonString.substring(0, ldJsonString.length - LDJSON_SUFFIX.length);
 	}
+	if(!ldJsonString) {
+		return null;
+	}
 	try {
 		return JSON.parse(ldJsonString);
 	} catch(error) {
