@@ -141,6 +141,31 @@ const createFilmPosterURL = (filmId: string, filmSlug: string, width: string | n
 	return `https://a.ltrbxd.com/resized/film-poster/${filmId.split('').join('/')}/${filmId}-${filmSlug}-0-${width}-0-${height}-crop.jpg`;
 };
 
+const createFilmPosterURLScaled = (filmId: string, filmSlug: string, width: string | number, height: string | number, scale: number): string => {
+	// parse width values
+	let widthVal: number;
+	if(typeof width === 'number') {
+		widthVal = width;
+	} else {
+		widthVal = Number.parseInt(width);
+	}
+	let heightVal: number;
+	if(typeof height === 'number') {
+		heightVal = height;
+	} else {
+		heightVal = Number.parseInt(height);
+	}
+	// scale the image
+	if(!Number.isNaN(widthVal) && !Number.isNaN(heightVal)) {
+		widthVal *= scale;
+		heightVal *= scale;
+	} else {
+		widthVal = width as any;
+		heightVal = height as any;
+	}
+	return createFilmPosterURL(filmId, filmSlug, widthVal, heightVal);
+};
+
 export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEntry[], end: boolean } => {
 	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
 	const feedItems: ActivityFeedEntry[] = [];
@@ -310,7 +335,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 						const width = posterImgTag.attr('width');
 						const height = posterImgTag.attr('height');
 						if(width && height) {
-							filmPosterURL = createFilmPosterURL(filmId, filmSlug, width, height);
+							filmPosterURL = createFilmPosterURLScaled(filmId, filmSlug, width, height, 2);
 						}
 					}
 				}
