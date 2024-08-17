@@ -137,6 +137,10 @@ const parseRatingString = (ratingStr: string): number => {
 		+ countStringOccurences(ratingStr, '½');
 };
 
+const createFilmPosterURL = (filmId: string, filmSlug: string, width: string | number, height: string | number): string => {
+	return `https://a.ltrbxd.com/resized/film-poster/${filmId.split('').join('/')}/${filmId}-${filmSlug}-0-${width}-0-${height}-crop.jpg`;
+};
+
 export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEntry[], end: boolean } => {
 	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
 	const feedItems: ActivityFeedEntry[] = [];
@@ -265,7 +269,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								}
 								const reviewHref = objectLink.attr('href');
 								const reviewHrefParts = reviewHref ? trimString(reviewHref, '/').split('/') : [];
-								const objType = reviewHrefParts[1];
+								const filmType = reviewHrefParts[1];
 								const filmSlug = reviewHrefParts[2];
 								if(!filmSlug) {
 									console.warn(`Review href ${reviewHref} didn't have expected structure`);
@@ -282,7 +286,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								film = {
 									name: filmName,
 									slug: filmSlug,
-									href: (filmSlug ? `/${objType}/${filmSlug}/` : undefined)!
+									href: (filmSlug ? `/${filmType}/${filmSlug}/` : undefined)!
 								};
 							}
 						}
@@ -296,12 +300,26 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			}
 			else if(activityViewing.index() !== -1) {
 				// viewing
-				const filmImgSrc = activityViewing.find('.film-poster img').attr('src');
+				const filmPosterTag = activityViewing.find('.film-poster');
+				const filmId = filmPosterTag.attr('data-film-id');
+				const filmSlug = filmPosterTag.attr('data-film-slug');
+				let filmPosterURL: string | undefined = undefined;
+				if(filmId && filmSlug) {
+					const posterImgTag = filmPosterTag.find('img');
+					if(posterImgTag.index() !== -1) {
+						const width = posterImgTag.attr('width');
+						const height = posterImgTag.attr('height');
+						if(width && height) {
+							filmPosterURL = createFilmPosterURL(filmId, filmSlug, width, height);
+						}
+					}
+				}
 				const filmReviewLink = activityViewing.find('.film-detail-content > h2 > a');
 				const filmReviewHref = filmReviewLink.attr('href');
 				const filmReviewHrefParts = filmReviewHref ? trimString(filmReviewHref, '/').split('/') : [];
-				const filmSlug = filmReviewHrefParts[2];
-				if(filmReviewHrefParts[1] !== 'film') {
+				const filmType = filmReviewHrefParts[1];
+				const filmSlugFromViewing = filmReviewHrefParts[2];
+				if(filmSlug && filmSlug != filmSlugFromViewing) {
 					console.warn(`Review href ${filmReviewHref} didn't have expected structure`);
 				}
 				const filmName = filmReviewLink.text();
@@ -318,11 +336,11 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				const viewerSlug = viewerHref ? trimString(viewerHref, '/') : undefined;
 				if(!viewerSlug) {
 					console.warn(`Failed to parse username for entry ${entryIndex}`);
-				}
-				else if(viewerSlug.indexOf('/') != -1) {
+				} else if(viewerSlug.indexOf('/') != -1) {
 					console.warn(`Parsed user slug ${viewerSlug} from href ${viewerHref} contains a slash on entry ${entryIndex}`);
 				}
-				actionTypes = [$(lastFromArray(contextTag[0].childNodes)).text().trim().toLowerCase() as ActivityActionType];
+				const actionTypeStr = $(lastFromArray(contextTag[0].childNodes)).text().trim().toLowerCase();
+				actionTypes = [actionTypeStr as ActivityActionType];
 				viewing = {
 					userDisplayName: viewerLink.text(),
 					username: viewerSlug!,
@@ -332,13 +350,14 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					text: activityViewing.find('.film-detail-content .body-text > p').toArray().map((p) => $(p).text()).join("\n")
 				};
 				film = {
-					imageURL: filmImgSrc,
+					imageURL: filmPosterURL,
 					name: filmName,
-					href: `/film/${filmSlug}/`,
-					slug: filmSlug,
+					href: (filmSlugFromViewing ? `/${filmType}/${filmSlugFromViewing}/` : undefined)!,
+					slug: filmSlug ?? filmSlugFromViewing,
 					year: filmYear
 				};
 			} else {
+				console.warn(`Unknown feed item at index ${entryIndex}`);
 				// TODO handle other types of feed items
 			}
 			// parse other item properties
