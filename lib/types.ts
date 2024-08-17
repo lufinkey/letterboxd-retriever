@@ -2,6 +2,8 @@
 export enum ActivityActionType {
 	Watched = 'watched',
 	Rewatched = 'rewatched',
+	Liked = 'liked',
+	Rated = 'rated',
 	LikedReview = 'liked-review',
 	AddedToWatchlist = 'added-to-watchlist'
 }
@@ -29,7 +31,7 @@ export interface ActivityFeedEntry {
 	userHref: string;
 	username: string;
 	userDisplayName: string;
-	action: ActivityActionType;
+	actions: ActivityActionType[];
 	viewing?: ActivityFeedViewing | undefined;
 	film?: ActivityFeedFilm | undefined;
 	time: Date;

@@ -163,7 +163,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			const userImageSrc = userImageElement.attr('src');
 			let userDisplayName = userImageElement.attr('alt');
 			// parse activity entry
-			let actionType: ActivityActionType;
+			let actionTypes: ActivityActionType[];
 			let film: ActivityFeedFilm | undefined = undefined;
 			let viewing: ActivityFeedViewing | undefined = undefined;
 			const activityDescr = node$.find('.table-activity-description');
@@ -174,83 +174,124 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				if(userLink.index() === -1) {
 					console.warn(`Missing user link on entry index ${entryIndex}`);
 				}
-				const objectLink = activityDescr.find('.activity-summary > a:nth-of-type(2)');
-				const userLinkText = userLink.text().trim();
-				if(userLinkText) {
-					userDisplayName = userLinkText;
-				}
-				const actionText = userLink[0]?.nextSibling ? $(userLink[0].nextSibling).text().trim().toLowerCase() : undefined;
-				switch(actionText) {
-					case 'added': {
-						if(objectLink.index() === -1) {
-							console.warn(`Missing object link on entry index ${entryIndex}`);
-						}
-						const afterObjectText = objectLink[0]?.nextSibling ? $(objectLink[0].nextSibling).text().trim().toLowerCase() : undefined;
-						const object2Link = activityDescr.find('.activity-summary > a:nth-of-type(3)');
-						const object2Text = object2Link.text().trim().toLowerCase();
-						if(afterObjectText == 'to' && object2Text.endsWith(' watchlist')) {
-							// added to watchlist
-							actionType = ActivityActionType.AddedToWatchlist;
-							const filmHref = objectLink.attr('href');
-							let filmSlug = filmHref ? trimString(filmHref, '/') : undefined;
-							let slashIndex = filmSlug?.lastIndexOf('/') ?? -1;
-							if(slashIndex !== -1) {
-								filmSlug = filmSlug!.substring(slashIndex+1);
-							}
-							film = {
-								name: objectLink.text(),
-								slug: filmSlug!,
-								href: filmHref!
-							};
-						}
+				// check for multiple actions
+				const multiActionTextTag = activityDescr.find('.activity-summary .context:not(:has(.rating)):not(:has(.name))');
+				const multiActionText = multiActionTextTag.index() !== -1 ? multiActionTextTag.text().trim() : null;
+				if(multiActionText) {
+					// handle multi-action
+					const parts = multiActionText.split(/,|and/)
+						.map((item) => item.trim())
+						.filter((item) => item);
+					actionTypes = parts as ActivityActionType[];
+					// parse movie name
+					const filmName = multiActionTextTag[0]?.nextSibling ? $(multiActionTextTag[0].nextSibling).text().trim() : undefined;
+					// parse rating
+					const ratingTag = activityDescr.find('.activity-summary .rating');
+					let rating: number | undefined = undefined;
+					if(ratingTag.index() !== -1) {
+						const ratingStr = ratingTag.text().trim();
+						rating = parseRatingString(ratingStr);
 					}
-					break;
-
-					case 'liked': {
-						if(objectLink.index() === -1) {
-							console.warn(`Missing object link on entry index ${entryIndex}`);
-						}
-						const objectLinkContext = objectLink.find('.context')[0].childNodes
-							.map((n) => (n.type == 'text' ? $(n).text().trim() : undefined))
-							.find((t) => t != null && t.length > 0)?.toLowerCase();
-						if(objectLinkContext == 'review of') {
-							// liked review
-							let reviewerName = activityDescr.find('.activity-summary > strong.name').text();
-							if(reviewerName.endsWith(POSESSIVE_TEXT_SUFFIX1)) {
-								reviewerName = reviewerName.substring(0, reviewerName.length - POSESSIVE_TEXT_SUFFIX1.length);
-							}
-							const ratingTag = objectLink.find('.rating');
-							let rating: number | undefined = undefined;
-							if(ratingTag.index() !== -1) {
-								const ratingStr = ratingTag.text().trim();
-								rating = parseRatingString(ratingStr);
-							}
-							const reviewHref = objectLink.attr('href');
-							const reviewHrefParts = reviewHref ? trimString(reviewHref, '/').split('/') : [];
-							const filmSlug = reviewHrefParts[2];
-							if(reviewHrefParts[1] !== 'film') {
-								console.warn(`Review href ${reviewHref} didn't have expected structure`);
-							}
-							const userSlug = reviewHrefParts[0];
-							const filmName = $(lastFromArray(objectLink[0].childNodes)).text();
-							actionType = ActivityActionType.LikedReview;
-							viewing = {
-								userDisplayName: reviewerName,
-								username: userSlug,
-								href: reviewHref!,
-								rating: rating
-							};
-							film = {
-								name: filmName,
-								slug: filmSlug,
-								href: `/film/${filmSlug}/`
-							};
-						}
+					// parse viewer
+					const viewerNameTag = activityDescr.find('.activity-summary a.name');
+					const viewerName = viewerNameTag.text().trim();
+					const viewerHref = viewerNameTag.attr('href');
+					const viewerSlug = viewerHref ? trimString(viewerHref, '/').split('/')[0] : undefined;
+					// parse viewing
+					const viewingHref = activityDescr.find('.activity-summary a.target').attr('href');
+					const viewingHrefParts = viewingHref ? trimString(viewingHref, '/').split('/') : [];
+					const objType = viewingHrefParts[1];
+					const filmSlug = viewingHrefParts[2];
+					// create objects
+					viewing = {
+						userDisplayName: viewerName,
+						username: viewerSlug!,
+						href: viewingHref!,
+						rating: rating
+					};
+					film = {
+						name: filmName!,
+						slug: filmSlug!,
+						href: (filmSlug ? `${objType}/${filmSlug}` : undefined)!
+					};
+				} else {
+					// handle single action
+					const objectLink = activityDescr.find('.activity-summary > a:nth-of-type(2)');
+					const userLinkText = userLink.text().trim();
+					if(userLinkText) {
+						userDisplayName = userLinkText;
 					}
-					break;
+					const actionText = userLink[0]?.nextSibling ? $(userLink[0].nextSibling).text().trim().toLowerCase() : undefined;
+					switch(actionText) {
+						case 'added': {
+							if(objectLink.index() === -1) {
+								console.warn(`Missing object link on entry index ${entryIndex}`);
+							}
+							const afterObjectText = objectLink[0]?.nextSibling ? $(objectLink[0].nextSibling).text().trim().toLowerCase() : undefined;
+							const object2Link = activityDescr.find('.activity-summary > a:nth-of-type(3)');
+							const object2Text = object2Link.text().trim().toLowerCase();
+							if(afterObjectText == 'to' && object2Text.endsWith(' watchlist')) {
+								// added to watchlist
+								actionTypes = [ActivityActionType.AddedToWatchlist];
+								const filmHref = objectLink.attr('href');
+								const filmSlug = filmHref ? trimString(filmHref, '/').split('/')[1] : undefined;
+								film = {
+									name: objectLink.text(),
+									slug: filmSlug!,
+									href: filmHref!
+								};
+							}
+						}
+						break;
 
-					default:
-						console.warn(`Unknown action ${actionText}`);
+						case 'liked': {
+							if(objectLink.index() === -1) {
+								console.warn(`Missing object link on entry index ${entryIndex}`);
+							}
+							const objectLinkContext = objectLink.find('.context')[0].childNodes
+								.map((n) => (n.type == 'text' ? $(n).text().trim() : undefined))
+								.find((t) => t != null && t.length > 0)?.toLowerCase();
+							if(objectLinkContext == 'review of') {
+								// liked review
+								let reviewerName = activityDescr.find('.activity-summary > strong.name').text();
+								if(reviewerName.endsWith(POSESSIVE_TEXT_SUFFIX1)) {
+									reviewerName = reviewerName.substring(0, reviewerName.length - POSESSIVE_TEXT_SUFFIX1.length);
+								}
+								const ratingTag = objectLink.find('.rating');
+								let rating: number | undefined = undefined;
+								if(ratingTag.index() !== -1) {
+									const ratingStr = ratingTag.text().trim();
+									rating = parseRatingString(ratingStr);
+								}
+								const reviewHref = objectLink.attr('href');
+								const reviewHrefParts = reviewHref ? trimString(reviewHref, '/').split('/') : [];
+								const objType = reviewHrefParts[1];
+								const filmSlug = reviewHrefParts[2];
+								if(!filmSlug) {
+									console.warn(`Review href ${reviewHref} didn't have expected structure`);
+								}
+								const userSlug = reviewHrefParts[0];
+								const filmName = $(lastFromArray(objectLink[0].childNodes)).text();
+								actionTypes = [ActivityActionType.LikedReview];
+								viewing = {
+									userDisplayName: reviewerName,
+									username: userSlug,
+									href: reviewHref!,
+									rating: rating
+								};
+								film = {
+									name: filmName,
+									slug: filmSlug,
+									href: (filmSlug ? `/${objType}/${filmSlug}/` : undefined)!
+								};
+							}
+						}
+						break;
+
+						default:
+							console.warn(`Unknown action ${actionText} on entry ${entryIndex}`);
+							break;
+					}
 				}
 			}
 			else if(activityViewing.index() !== -1) {
@@ -281,7 +322,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				else if(viewerSlug.indexOf('/') != -1) {
 					console.warn(`Parsed user slug ${viewerSlug} from href ${viewerHref} contains a slash on entry ${entryIndex}`);
 				}
-				actionType = $(lastFromArray(contextTag[0].childNodes)).text().trim().toLowerCase() as ActivityActionType;
+				actionTypes = [$(lastFromArray(contextTag[0].childNodes)).text().trim().toLowerCase() as ActivityActionType];
 				viewing = {
 					userDisplayName: viewerLink.text(),
 					username: viewerSlug!,
@@ -311,7 +352,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				userHref: userHref!,
 				username: username!,
 				userDisplayName: userDisplayName!,
-				action: actionType!,
+				actions: actionTypes!,
 				film: film,
 				viewing: viewing,
 				time: time!
