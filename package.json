@@ -4,11 +4,15 @@
 	"description": "An unofficial library for retrieving data from letterboxd",
 	"main": "dist/lib/index.js",
 	"types": "dist/lib/index.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/lufinkey/letterboxd-retriever.git"
+	},
 	"scripts": {
-		"test": "tsc && node dist/lib/test.js",
-		"build": "tsc",
+		"test": "npm run build && node dist/lib/test.js",
+		"build": "npx tsc",
 		"lint": "eslint . --ext .ts",
-		"postinstall": "tsc"
+		"prepare": "npm run build"
 	},
 	"keywords": [
 		"letterboxd"
