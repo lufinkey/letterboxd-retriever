@@ -11,8 +11,10 @@ export type Viewing = {
 	user: User;
 	href: string;
 	rating?: number | undefined; // 0-10
-	text?: string;
 	liked?: boolean;
+	text?: string;
+	fullTextHref?: string;
+	hasMoreText?: boolean;
 	// TODO add comments count, hasMore
 };
 

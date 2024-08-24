@@ -32,6 +32,8 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		const reviewTag = $(reviewElement);
 		const avatarTag = reviewTag.find('a.avatar');
 		const contextTag = reviewTag.find('.film-detail-content a.context');
+		const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
+		const collapsedTextTag = bodyTextTag.find('.collapsed-text');
 		popularReviews.push({
 			id: reviewTag.attr('data-viewing-id'),
 			user: {
@@ -43,7 +45,9 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			href: contextTag.attr('href')!,
 			rating: parseRatingString(reviewTag.find('.rating').text()),
 			liked: reviewTag.find('.icon-liked').index() !== -1,
-			text: reviewTag.find('.film-detail-content .body-text').toArray().map((p) => $(p).text()).join("\n")
+			text: (collapsedTextTag.index() != -1 ? collapsedTextTag.find('> p') : bodyTextTag.find('> p')).toArray().map((p) => $(p).text()).join("\n"),
+			fullTextHref: bodyTextTag.attr('data-full-text-url'),
+			hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined
 		});
 	}
 	return {
@@ -331,7 +335,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								actionTypes = [ActivityActionType.LikedReview];
 								viewing = {
 									user: {
-										href: (reviewerSlug ? `/${reviewerSlug}` : undefined)!,
+										href: (reviewerSlug ? `/${reviewerSlug}/` : undefined)!,
 										displayName: reviewerName,
 										username: reviewerSlug
 									},

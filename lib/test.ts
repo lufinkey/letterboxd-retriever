@@ -2,16 +2,16 @@
 import * as letterboxd from './index';
 
 (async () => {
-	/*console.log("Testing getFilmInfo with slug");
+	console.log("Testing getFilmInfo with slug");
 	try {
-		const result = await letterboxd.getFilmInfo({slug:'twisters'});
+		const result = await letterboxd.getFilmInfo({slug:'legend'});
 		console.log(JSON.stringify(result, null, '\t'));
 	} catch(error) {
 		console.error(error);
 	}
 	console.log();
 
-	console.log("Testing getFilmInfo with href");
+	/*console.log("Testing getFilmInfo with href");
 	try {
 		const result = await letterboxd.getFilmInfo({href:'/film/twisters'});
 		console.log(JSON.stringify(result, null, '\t'));
