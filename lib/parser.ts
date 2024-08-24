@@ -27,6 +27,25 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 	}
 	const body = $('body');
 	const backdropTag = $('#backdrop');
+	let popularReviews: Viewing[] = [];
+	for(const reviewElement of $('ul.film-popular-review > li')) {
+		const reviewTag = $(reviewElement);
+		const avatarTag = reviewTag.find('a.avatar');
+		const contextTag = reviewTag.find('.film-detail-content a.context');
+		popularReviews.push({
+			id: reviewTag.attr('data-viewing-id'),
+			user: {
+				imageURL: avatarTag.find('img').attr('src'),
+				href: avatarTag.attr('href')!,
+				username: reviewTag.attr('data-person')!,
+				displayName: contextTag.find('.name').text()!
+			},
+			href: contextTag.attr('href')!,
+			rating: parseRatingString(reviewTag.find('.rating').text()),
+			liked: reviewTag.find('.icon-liked').index() !== -1,
+			text: reviewTag.find('.film-detail-content .body-text').toArray().map((p) => $(p).text()).join("\n")
+		});
+	}
 	return {
 		id: backdropTag.attr('data-film-id')!,
 		slug: backdropTag.attr('data-film-slug')!,
@@ -41,9 +60,10 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			default: backdropTag.attr('data-backdrop')!,
 			retina: backdropTag.attr('data-backdrop2x')!,
 			mobile: backdropTag.attr('data-backdrop-mobile')!
-		}
+		},
+		popularReviews: popularReviews
 	};
-}
+};
 
 export const parseLdJson = (pageData: cheerio.CheerioAPI | string): any => {
 	let $: cheerio.CheerioAPI;
@@ -133,7 +153,10 @@ const lastFromArray = <T>(arr: T[]): T | undefined => {
 	return undefined;
 };
 
-const parseRatingString = (ratingStr: string): number => {
+const parseRatingString = (ratingStr: string | undefined): number | undefined => {
+	if(!ratingStr) {
+		return undefined;
+	}
 	return (2 * countStringOccurences(ratingStr, '★'))
 		+ countStringOccurences(ratingStr, '½');
 };
@@ -376,10 +399,10 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				actionTypes = [actionTypeStr as ActivityActionType];
 				viewing = {
 					user: {
+						imageURL: userImageSrc,
 						href: viewerHref!,
 						username: viewerSlug!,
 						displayName: viewerName
-
 					},
 					href: filmReviewHref!,
 					rating: rating,
@@ -405,7 +428,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			feedItems.push({
 				id: id!,
 				user: {
-					imageURL: userImageSrc!,
+					imageURL: userImageSrc,
 					href: userHref!,
 					username: username!,
 					displayName: userDisplayName!

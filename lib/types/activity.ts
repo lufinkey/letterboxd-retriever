@@ -14,7 +14,7 @@ export enum ActivityActionType {
 	AddedToWatchlist = 'added-to-watchlist'
 }
 
-export interface ActivityFeedEntry {
+export type ActivityFeedEntry = {
 	id: string;
 	user: User;
 	actions: ActivityActionType[];
@@ -23,7 +23,7 @@ export interface ActivityFeedEntry {
 	time: Date;
 }
 
-export interface ActivityFeedPage {
+export type ActivityFeedPage = {
 	items: ActivityFeedEntry[];
 	csrf: string;
 	end: boolean;

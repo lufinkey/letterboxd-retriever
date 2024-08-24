@@ -7,6 +7,7 @@ export type User = {
 };
 
 export type Viewing = {
+	id?: string;
 	user: User;
 	href: string;
 	rating?: number | undefined; // 0-10

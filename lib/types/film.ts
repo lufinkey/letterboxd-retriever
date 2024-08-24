@@ -77,6 +77,7 @@ export interface FilmPageData {
 		retina: string;
 		mobile: string
 	};
+	popularReviews: Viewing[];
 }
 
 export interface FilmInfo {
