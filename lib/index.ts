@@ -22,6 +22,7 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string})): Prom
 	}
 	const res = await fetch(url);
 	if(!res.ok) {
+		res.body?.cancel();
 		throw new Error(res.statusText);
 	}
 	const resData = await res.text();
@@ -67,6 +68,7 @@ export const getUserFollowingFeed = async (username: string, options: {
 		} 
 	});
 	if(!res.ok) {
+		res.body?.cancel();
 		throw new Error(res.statusText);
 	}
 	const resData = await res.text();
