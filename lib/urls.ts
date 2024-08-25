@@ -49,6 +49,13 @@ export const filmPageURLFromImdbID = (imdbId: string) => {
 	return `${BASE_URL}/imdb/${imdbId}`;
 };
 
+export const friendsReviewsURL = (options: {
+	username: string,
+	filmSlug: string
+}) => {
+	return `${BASE_URL}/${options.username}/friends/film/${options.filmSlug}/reviews`;
+};
+
 export const filmPosterURL = (options: {
 	slug: string,
 	width: number,

@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import {
 	Film,
 	FilmInfo,
+	Viewing,
 	ActivityFeedPage
 } from './types';
 import * as lburls from './urls';
@@ -79,6 +80,17 @@ export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {im
 		throw new Error(`Invalid film href ${href}`);
 	}
 	return hrefParts[1];
+};
+
+export const getFriendsReviews = async (options: {username: string, filmSlug: string}): Promise<Viewing[]> => {
+	const url = lburls.friendsReviewsURL(options);
+	const res = await fetch(url);
+	if(!res.ok) {
+		res.body?.cancel();
+		throw new Error(res.statusText);
+	}
+	const resData = await res.text();
+	return lbparse.parseViewingListPage(resData);
 };
 
 export const getFilmPoster = async (options: {

@@ -29,26 +29,8 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 	const backdropTag = $('#backdrop');
 	let popularReviews: Viewing[] = [];
 	for(const reviewElement of $('ul.film-popular-review > li')) {
-		const reviewTag = $(reviewElement);
-		const avatarTag = reviewTag.find('a.avatar');
-		const contextTag = reviewTag.find('.film-detail-content a.context');
-		const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
-		const collapsedTextTag = bodyTextTag.find('.collapsed-text');
-		popularReviews.push({
-			id: reviewTag.attr('data-viewing-id'),
-			user: {
-				imageURL: avatarTag.find('img').attr('src'),
-				href: avatarTag.attr('href')!,
-				username: reviewTag.attr('data-person')!,
-				displayName: contextTag.find('.name').text()!
-			},
-			href: contextTag.attr('href')!,
-			rating: parseRatingString(reviewTag.find('.rating').text()),
-			liked: reviewTag.find('.icon-liked').index() !== -1,
-			text: (collapsedTextTag.index() != -1 ? collapsedTextTag.find('> p') : bodyTextTag.find('> p')).toArray().map((p) => $(p).text()).join("\n"),
-			fullTextHref: bodyTextTag.attr('data-full-text-url'),
-			hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined
-		});
+		const viewing = parseViewingListElement($(reviewElement), $);
+		popularReviews.push(viewing);
 	}
 	return {
 		id: backdropTag.attr('data-film-id')!,
@@ -66,6 +48,28 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			mobile: backdropTag.attr('data-backdrop-mobile')!
 		},
 		popularReviews: popularReviews
+	};
+};
+
+export const parseViewingListElement = (reviewTag: cheerio.Cheerio<cheerio.Element>, $: cheerio.CheerioAPI): Viewing => {
+	const avatarTag = reviewTag.find('a.avatar');
+	const contextTag = reviewTag.find('.film-detail-content a.context');
+	const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
+	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
+	return {
+		id: reviewTag.attr('data-viewing-id'),
+		user: {
+			imageURL: avatarTag.find('img').attr('src'),
+			href: avatarTag.attr('href')!,
+			username: reviewTag.attr('data-person')!,
+			displayName: contextTag.find('.name').text()!
+		},
+		href: contextTag.attr('href')!,
+		rating: parseRatingString(reviewTag.find('.rating').text()),
+		liked: reviewTag.find('.icon-liked').index() !== -1,
+		text: (collapsedTextTag.index() != -1 ? collapsedTextTag.find('> p') : bodyTextTag.find('> p')).toArray().map((p) => $(p).text()).join("\n"),
+		fullTextHref: bodyTextTag.attr('data-full-text-url'),
+		hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined
 	};
 };
 
@@ -223,6 +227,16 @@ export const parsePosterPage = (pageData: string): Film => {
 		name: posterTag.attr('data-film-name')!,
 		year: posterTag.attr('data-film-release-year')
 	};
+};
+
+export const parseViewingListPage = (pageData: string): Viewing[] => {
+	const $ = cheerio.load(pageData);
+	let viewings: Viewing[] = [];
+	for(const viewingElement of $('.viewings-list > ul > li')) {
+		const viewing = parseViewingListElement($(viewingElement), $);
+		viewings.push(viewing);
+	}
+	return viewings;
 };
 
 export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEntry[], end: boolean } => {
