@@ -10,6 +10,7 @@ import * as lburls from './urls';
 import * as lbparse from './parser';
 
 export * from './types';
+export { BASE_URL } from './urls';
 
 export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdbId: string} | {imdbId: string})): Promise<FilmInfo> => {
 	let url: string;
