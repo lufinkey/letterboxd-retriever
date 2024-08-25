@@ -30,6 +30,13 @@ export const urlFromHref = (href: string) => {
 	return `${BASE_URL}${href}`;
 };
 
+export const hrefFromURL = (url: string) => {
+	if(url.startsWith(BASE_URL)) {
+		url = url.substring(BASE_URL.length);
+	}
+	return url;
+};
+
 export const filmPageURLFromSlug = (slug: string) => {
 	return `${BASE_URL}/film/${slug}`;
 };

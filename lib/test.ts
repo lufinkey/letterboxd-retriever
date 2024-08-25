@@ -2,6 +2,18 @@
 import * as letterboxd from './index';
 
 (async () => {
+	console.log("Testing getFilmHrefFromTmdbID");
+	try {
+		const result = await letterboxd.getFilmHrefFromTmdbID('1226578');
+		console.log(JSON.stringify(result, null, '\t'));
+	} catch(error) {
+		console.error(error);
+	}
+	console.log();
+	console.log();
+	console.log();
+	return;
+
 	console.log("Testing getFilmInfo with slug");
 	try {
 		const result = await letterboxd.getFilmInfo({slug:'legend'});

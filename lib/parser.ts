@@ -124,7 +124,7 @@ export const parseCSRF = (pageData: cheerio.CheerioAPI | string) => {
 	return null;
 };
 
-const trimString = (str: string, char: string): string => {
+export const trimString = (str: string, char: string): string => {
 	let start = 0;
 	let end = str.length;
 	while(start < str.length && str[start] == char) {

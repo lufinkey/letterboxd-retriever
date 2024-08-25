@@ -38,6 +38,48 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdb
 	};
 };
 
+export const getFilmHrefFromTmdbID = async (tmdbId: string): Promise<string> => {
+	const url = lburls.filmPageURLFromTmdbID(tmdbId);
+	const res = await fetch(url, {
+		method: 'HEAD'
+	});
+	if(!res.ok) {
+		res.body?.cancel();
+		throw new Error(res.statusText);
+	}
+	return lburls.hrefFromURL(res.url);
+};
+
+export const getFilmSlugFromTmdbID = async (tmdbId: string): Promise<string> => {
+	const href = await getFilmHrefFromTmdbID(tmdbId);
+	const hrefParts = lbparse.trimString(href, '/').split('/');
+	if(hrefParts[0] != 'film') {
+		throw new Error(`Invalid film href ${href}`);
+	}
+	return hrefParts[1];
+};
+
+export const getFilmHrefFromImdbID = async (imdbId: string): Promise<string> => {
+	const url = lburls.filmPageURLFromImdbID(imdbId);
+	const res = await fetch(url, {
+		method: 'HEAD'
+	});
+	if(!res.ok) {
+		res.body?.cancel();
+		throw new Error(res.statusText);
+	}
+	return lburls.hrefFromURL(res.url);
+};
+
+export const getFilmSlugFromImdbID = async (imdbId: string): Promise<string> => {
+	const href = await getFilmHrefFromImdbID(imdbId);
+	const hrefParts = lbparse.trimString(href, '/').split('/');
+	if(hrefParts[0] != 'film') {
+		throw new Error(`Invalid film href ${href}`);
+	}
+	return hrefParts[1];
+};
+
 export const getFilmPoster = async (options: {
 	slug: string,
 	width: number,
