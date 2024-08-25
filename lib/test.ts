@@ -10,6 +10,8 @@ import * as letterboxd from './index';
 		console.error(error);
 	}
 	console.log();
+	console.log();
+	console.log();
 
 	/*console.log("Testing getFilmInfo with href");
 	try {
@@ -18,7 +20,20 @@ import * as letterboxd from './index';
 	} catch(error) {
 		console.error(error);
 	}
+	console.log();
+	console.log();
 	console.log();*/
+
+	console.log("Testing getFilmInfo with tmdbId");
+	try {
+		const result = await letterboxd.getFilmInfo({tmdbId:'1226578'});
+		console.log(JSON.stringify(result, null, '\t'));
+	} catch(error) {
+		console.error(error);
+	}
+	console.log();
+	console.log();
+	console.log();
 
 	console.log("Testing getUserFollowingFeed");
 	try {

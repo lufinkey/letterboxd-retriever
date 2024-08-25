@@ -3,23 +3,23 @@ import * as cheerio from 'cheerio';
 import {
 	Film,
 	FilmInfo,
-	FilmPageData,
-	FilmLDJson,
-	ActivityFeedPage,
-	ActivityFeedEntry } from './types';
+	ActivityFeedPage
+} from './types';
 import * as lburls from './urls';
 import * as lbparse from './parser';
 
 export * from './types';
 
-export const getFilmInfo = async (film: ({slug: string} | {href: string})): Promise<FilmInfo> => {
+export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdbId: string})): Promise<FilmInfo> => {
 	let url: string;
 	if('slug' in film && film.slug) {
 		url = lburls.filmPageURLFromSlug(film.slug);
 	} else if('href' in film && film.href) {
 		url = lburls.urlFromHref(film.href);
+	} else if('tmdbId' in film && film.tmdbId) {
+		url = lburls.filmPageURLFromTmdbID(film.tmdbId);
 	} else {
-		throw new Error(`No slug or href was provided`);
+		throw new Error(`No slug, href, or id was provided`);
 	}
 	const res = await fetch(url);
 	if(!res.ok) {
@@ -28,7 +28,7 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string})): Prom
 	}
 	const resData = await res.text();
 	const $ = cheerio.load(resData);
-	const ldJson: FilmLDJson = lbparse.parseLdJson($);
+	const ldJson = lbparse.parseLdJson($);
 	const pageData = lbparse.parseFilmPage($);
 	return {
 		pageData,

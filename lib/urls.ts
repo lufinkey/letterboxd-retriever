@@ -34,6 +34,10 @@ export const filmPageURLFromSlug = (slug: string) => {
 	return `${BASE_URL}/film/${slug}`;
 };
 
+export const filmPageURLFromTmdbID = (tmdbId: string) => {
+	return `${BASE_URL}/tmdb/${tmdbId}`;
+};
+
 export const filmPosterURL = (options: {
 	slug: string,
 	width: number,
