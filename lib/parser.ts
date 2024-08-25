@@ -56,7 +56,7 @@ export const parseViewingListElement = (reviewTag: cheerio.Cheerio<cheerio.Eleme
 	return {
 		id: reviewTag.attr('data-viewing-id'),
 		user: {
-			imageURL: avatarTag.find('img').attr('src'),
+			imageURL: parseCacheBusterURL(avatarTag.find('img').attr('src'), 'v'),
 			href: avatarTag.attr('href')!,
 			username: reviewTag.attr('data-person')!,
 			displayName: contextTag.find('.name').text()!
@@ -463,7 +463,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				actionTypes = [actionTypeStr as ActivityActionType];
 				viewing = {
 					user: {
-						imageURL: userImageSrc,
+						imageURL: parseCacheBusterURL(userImageSrc, 'v'),
 						href: viewerHref!,
 						username: viewerSlug!,
 						displayName: viewerName
@@ -493,7 +493,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			feedItems.push({
 				id: id!,
 				user: {
-					imageURL: userImageSrc,
+					imageURL: parseCacheBusterURL(userImageSrc, 'v'),
 					href: userHref!,
 					username: username!,
 					displayName: userDisplayName!
