@@ -12,7 +12,6 @@ import * as letterboxd from './index';
 	console.log();
 	console.log();
 	console.log();
-	return;
 
 	console.log("Testing getFilmInfo with slug");
 	try {
