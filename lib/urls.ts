@@ -34,6 +34,14 @@ export const filmPageURLFromSlug = (slug: string) => {
 	return `${BASE_URL}/film/${slug}`;
 };
 
+export const filmPosterURL = (options: {
+	slug: string,
+	width: number,
+	height: number
+}) => {
+	return `${BASE_URL}/poster/film/${options.slug}/std/${options.width}x${options.height}`;
+};
+
 export const followingActivityFeedPageURL = (options: {
 	username: string
 }) => {

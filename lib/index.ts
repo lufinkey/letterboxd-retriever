@@ -1,6 +1,7 @@
 
 import * as cheerio from 'cheerio';
 import {
+	Film,
 	FilmInfo,
 	FilmPageData,
 	FilmLDJson,
@@ -35,9 +36,26 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string})): Prom
 	};
 };
 
+export const getFilmPoster = async (options: {
+	slug: string,
+	width: number,
+	height: number
+}): Promise<Film> => {
+	const url = lburls.filmPosterURL(options);
+	const res = await fetch(url);
+	if(!res.ok) {
+		res.body?.cancel();
+		throw new Error(res.statusText);
+	}
+	const resData = await res.text();
+	return lbparse.parsePosterPage(resData);
+};
+
 export const getUserFollowingFeed = async (username: string, options: {
 	after?: number | string | undefined,
-	csrf?: string | undefined
+	csrf?: string | undefined,
+	includeAjaxContent?: boolean,
+	posterSize?: {width: number, height: number}
 } = {}): Promise<ActivityFeedPage> => {
 	const feedPageURL = lburls.followingActivityFeedPageURL({
 		username: username
@@ -74,6 +92,24 @@ export const getUserFollowingFeed = async (username: string, options: {
 	const resData = await res.text();
 	//console.log(resData);
 	const result = lbparse.parseAjaxActivityFeed(resData);
+	// fetch ajax content if needed
+	if(options.includeAjaxContent ?? true) {
+		const posterSize = options.posterSize ?? {width: 140,height:210};
+		result.items = await Promise.all(result.items.map(async (item) => {
+			if(item.film) {
+				if(!item.film.imageURL || !item.film.year) {
+					const film = await getFilmPoster({
+						slug: item.film.slug,
+						width: posterSize.width,
+						height: posterSize.height
+					});
+					item.film.imageURL = film.imageURL;
+					item.film.year = film.year;
+				}
+			}
+			return item;
+		}));
+	}
 	return {
 		...result,
 		csrf: csrf

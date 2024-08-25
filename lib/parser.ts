@@ -1,4 +1,4 @@
-
+import qs from 'querystring';
 import * as cheerio from 'cheerio';
 import {
 	DataNode
@@ -194,6 +194,37 @@ const createFilmPosterURLScaled = (filmId: string, filmSlug: string, width: stri
 	return createFilmPosterURL(filmId, filmSlug, widthVal, heightVal);
 };
 
+const parseCacheBusterURL = (url: string | undefined, busterKey: string): string | undefined => {
+	if(!url) {
+		return url;
+	}
+	const queryIndex = url.indexOf('?');
+	if(queryIndex == -1) {
+		return url;
+	}
+	const query = qs.parse(url.substring(queryIndex+1));
+	delete query[busterKey];
+	let urlWithoutQuery = url.substring(0, queryIndex);
+	if(Object.keys(query).length == 0) {
+		return urlWithoutQuery;
+	}
+	return `${urlWithoutQuery}?${qs.stringify(query)}`;
+};
+
+export const parsePosterPage = (pageData: string): Film => {
+	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
+	const posterTag = $('.film-poster');
+	const imgTag = posterTag.find('img');
+	return {
+		id: posterTag.attr('data-film-id'),
+		imageURL: parseCacheBusterURL(imgTag.attr('src'), 'v'),
+		href: posterTag.attr('data-film-link')!,
+		slug: posterTag.attr('data-film-slug')!,
+		name: posterTag.attr('data-film-name')!,
+		year: posterTag.attr('data-film-release-year')
+	};
+};
+
 export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEntry[], end: boolean } => {
 	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
 	const feedItems: ActivityFeedEntry[] = [];
@@ -347,6 +378,8 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 									slug: filmSlug,
 									href: (filmSlug ? `/${filmType}/${filmSlug}/` : undefined)!
 								};
+							} else {
+								console.warn(`Unknown object type at index ${entryIndex}`);
 							}
 						}
 						break;
@@ -362,17 +395,17 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				const filmPosterTag = activityViewing.find('.film-poster');
 				const filmId = filmPosterTag.attr('data-film-id');
 				const filmSlug = filmPosterTag.attr('data-film-slug');
-				let filmPosterURL: string | undefined = undefined;
+				/*let filmPosterImageURL: string | undefined = undefined;
 				if(filmId && filmSlug) {
 					const posterImgTag = filmPosterTag.find('img');
 					if(posterImgTag.index() !== -1) {
 						const width = posterImgTag.attr('width');
 						const height = posterImgTag.attr('height');
 						if(width && height) {
-							filmPosterURL = createFilmPosterURLScaled(filmId, filmSlug, width, height, 2);
+							filmPosterImageURL = createFilmPosterURLScaled(filmId, filmSlug, width, height, 2);
 						}
 					}
-				}
+				}*/
 				const filmReviewLink = activityViewing.find('.film-detail-content > h2 > a');
 				const filmReviewHref = filmReviewLink.attr('href');
 				const filmReviewHrefParts = filmReviewHref ? trimString(filmReviewHref, '/').split('/') : [];
@@ -399,6 +432,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				} else if(viewerSlug.indexOf('/') != -1) {
 					console.warn(`Parsed user slug ${viewerSlug} from href ${viewerHref} contains a slash on entry ${entryIndex}`);
 				}
+				const bodyTextTag = activityViewing.find('.film-detail-content .body-text');
 				const actionTypeStr = $(lastFromArray(contextTag[0].childNodes)).text()?.trim().toLowerCase();
 				actionTypes = [actionTypeStr as ActivityActionType];
 				viewing = {
@@ -411,10 +445,11 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					href: filmReviewHref!,
 					rating: rating,
 					liked: activityViewing.find('.icon-liked').index() !== -1,
-					text: activityViewing.find('.film-detail-content .body-text > p').toArray().map((p) => $(p).text()).join("\n")
+					text: bodyTextTag.find('> p').toArray().map((p) => $(p).text()).join("\n"),
+					fullTextHref: bodyTextTag.attr('data-full-text-url')
 				};
 				film = {
-					imageURL: filmPosterURL,
+					id: filmId,
 					name: filmName,
 					href: (filmSlugFromViewing ? `/${filmType}/${filmSlugFromViewing}/` : undefined)!,
 					slug: filmSlug ?? filmSlugFromViewing,

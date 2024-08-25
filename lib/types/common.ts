@@ -19,6 +19,7 @@ export type Viewing = {
 };
 
 export type Film = {
+	id?: string;
 	imageURL?: string | undefined;
 	name: string;
 	slug: string;
