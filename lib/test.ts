@@ -2,9 +2,20 @@
 import * as letterboxd from './index';
 
 (async () => {
-	console.log("Testing getFilmHrefFromTmdbID");
+	console.log("Testing getFilmHrefFromExternalID");
 	try {
-		const result = await letterboxd.getFilmHrefFromTmdbID('1226578');
+		const result = await letterboxd.getFilmHrefFromExternalID({tmdbId:'1226578'});
+		console.log(JSON.stringify(result, null, '\t'));
+	} catch(error) {
+		console.error(error);
+	}
+	console.log();
+	console.log();
+	console.log();
+
+	console.log("Testing failure getFilmHrefFromExternalID");
+	try {
+		const result = await letterboxd.getFilmHrefFromExternalID({tmdbId:'2710'});
 		console.log(JSON.stringify(result, null, '\t'));
 	} catch(error) {
 		console.error(error);

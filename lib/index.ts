@@ -38,41 +38,40 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdb
 	};
 };
 
-export const getFilmHrefFromTmdbID = async (tmdbId: string): Promise<string> => {
-	const url = lburls.filmPageURLFromTmdbID(tmdbId);
+export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string> => {
+	let url: string;
+	if('tmdbId' in options && options.tmdbId) {
+		url = lburls.filmPageURLFromTmdbID(options.tmdbId);
+	} else if('imdbId' in options && options.imdbId) {
+		url = lburls.filmPageURLFromImdbID(options.imdbId);
+	} else {
+		throw new Error(`No external id was provided`);
+	}
 	const res = await fetch(url, {
 		method: 'HEAD'
 	});
 	if(!res.ok) {
-		res.body?.cancel();
 		throw new Error(res.statusText);
 	}
-	return lburls.hrefFromURL(res.url);
-};
-
-export const getFilmSlugFromTmdbID = async (tmdbId: string): Promise<string> => {
-	const href = await getFilmHrefFromTmdbID(tmdbId);
-	const hrefParts = lbparse.trimString(href, '/').split('/');
-	if(hrefParts[0] != 'film') {
-		throw new Error(`Invalid film href ${href}`);
+	const filmHref = lburls.hrefFromURL(res.url);
+	let cmpHref = filmHref;
+	if(filmHref.endsWith('/')) {
+		if(!url.endsWith('/')) {
+			cmpHref = cmpHref.substring(0, cmpHref.length-1);
+		}
+	} else {
+		if(url.endsWith('/')) {
+			cmpHref += '/';
+		}
 	}
-	return hrefParts[1];
-};
-
-export const getFilmHrefFromImdbID = async (imdbId: string): Promise<string> => {
-	const url = lburls.filmPageURLFromImdbID(imdbId);
-	const res = await fetch(url, {
-		method: 'HEAD'
-	});
-	if(!res.ok) {
-		res.body?.cancel();
-		throw new Error(res.statusText);
+	if(url.endsWith(cmpHref)) {
+		throw new Error("Invalid film");
 	}
-	return lburls.hrefFromURL(res.url);
+	return filmHref;
 };
 
-export const getFilmSlugFromImdbID = async (imdbId: string): Promise<string> => {
-	const href = await getFilmHrefFromImdbID(imdbId);
+export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string> => {
+	const href = await getFilmHrefFromExternalID(options);
 	const hrefParts = lbparse.trimString(href, '/').split('/');
 	if(hrefParts[0] != 'film') {
 		throw new Error(`Invalid film href ${href}`);
