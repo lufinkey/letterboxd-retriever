@@ -39,7 +39,7 @@ export const filmPosterURL = (options: {
 	width: number,
 	height: number
 }) => {
-	return `${BASE_URL}/poster/film/${options.slug}/std/${options.width}x${options.height}`;
+	return `${BASE_URL}/ajax/poster/film/${options.slug}/std/${options.width}x${options.height}`;
 };
 
 export const followingActivityFeedPageURL = (options: {

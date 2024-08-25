@@ -93,16 +93,23 @@ export const getUserFollowingFeed = async (username: string, options: {
 	//console.log(resData);
 	const result = lbparse.parseAjaxActivityFeed(resData);
 	// fetch ajax content if needed
-	if(options.includeAjaxContent ?? true) {
+	if((options.includeAjaxContent ?? true) && (result.items?.length ?? 0) > 0) {
 		const posterSize = options.posterSize ?? {width: 140,height:210};
+		const posterPromises: {[slug: string]: Promise<Film>} = {};
 		result.items = await Promise.all(result.items.map(async (item) => {
 			if(item.film) {
 				if(!item.film.imageURL || !item.film.year) {
-					const film = await getFilmPoster({
-						slug: item.film.slug,
-						width: posterSize.width,
-						height: posterSize.height
-					});
+					const filmSlug = item.film.slug;
+					let promise = posterPromises[filmSlug];
+					if(!promise) {
+						promise = getFilmPoster({
+							slug: filmSlug,
+							width: posterSize.width,
+							height: posterSize.height
+						});
+						posterPromises[filmSlug] = promise;
+					}
+					const film = await promise;
 					item.film.imageURL = film.imageURL;
 					item.film.year = film.year;
 				}
