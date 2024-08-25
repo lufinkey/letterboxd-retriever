@@ -38,6 +38,10 @@ export const filmPageURLFromTmdbID = (tmdbId: string) => {
 	return `${BASE_URL}/tmdb/${tmdbId}`;
 };
 
+export const filmPageURLFromImdbID = (imdbId: string) => {
+	return `${BASE_URL}/imdb/${imdbId}`;
+};
+
 export const filmPosterURL = (options: {
 	slug: string,
 	width: number,

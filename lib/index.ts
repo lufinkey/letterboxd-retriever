@@ -10,7 +10,7 @@ import * as lbparse from './parser';
 
 export * from './types';
 
-export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdbId: string})): Promise<FilmInfo> => {
+export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdbId: string} | {imdbId: string})): Promise<FilmInfo> => {
 	let url: string;
 	if('slug' in film && film.slug) {
 		url = lburls.filmPageURLFromSlug(film.slug);
@@ -18,6 +18,8 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdb
 		url = lburls.urlFromHref(film.href);
 	} else if('tmdbId' in film && film.tmdbId) {
 		url = lburls.filmPageURLFromTmdbID(film.tmdbId);
+	} else if('imdbId' in film && film.imdbId) {
+		url = lburls.filmPageURLFromImdbID(film.imdbId);
 	} else {
 		throw new Error(`No slug, href, or id was provided`);
 	}
