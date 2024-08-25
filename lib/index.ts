@@ -39,7 +39,7 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdb
 	};
 };
 
-export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string> => {
+export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string | null> => {
 	let url: string;
 	if('tmdbId' in options && options.tmdbId) {
 		url = lburls.filmPageURLFromTmdbID(options.tmdbId);
@@ -68,13 +68,16 @@ export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {im
 	}
 	res.body?.cancel();
 	if(url.endsWith(cmpHref)) {
-		throw new Error("Invalid film");
+		return null;
 	}
 	return filmHref;
 };
 
-export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string> => {
+export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string | null> => {
 	const href = await getFilmHrefFromExternalID(options);
+	if(!href) {
+		return null;
+	}
 	const hrefParts = lbparse.trimString(href, '/').split('/');
 	if(hrefParts[0] != 'film') {
 		throw new Error(`Invalid film href ${href}`);
