@@ -51,6 +51,7 @@ export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {im
 		method: 'HEAD'
 	});
 	if(!res.ok) {
+		res.body?.cancel();
 		throw new Error(res.statusText);
 	}
 	const filmHref = lburls.hrefFromURL(res.url);
@@ -64,6 +65,7 @@ export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {im
 			cmpHref += '/';
 		}
 	}
+	res.body?.cancel();
 	if(url.endsWith(cmpHref)) {
 		throw new Error("Invalid film");
 	}
