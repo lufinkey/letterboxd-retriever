@@ -66,6 +66,8 @@ export interface FilmPageData {
 	id: string;
 	slug: string;
 	type: 'film';
+	name: string;
+	year: string;
 	tagline: string;
 	description: string;
 	tmdb: {

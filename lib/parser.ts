@@ -33,6 +33,8 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		id: backdropTag.attr('data-film-id')!,
 		slug: backdropTag.attr('data-film-slug')!,
 		type: body.attr('data-type') as any,
+		name: $('section.film-header-group .filmtitle').text()?.trim(),
+		year: $('section.film-header-group .releaseyear').text()?.trim(),
 		tagline: $('section .review.body-text .tagline').text(),
 		description: $('section .review.body-text div > p').toArray().map((p) => $(p).text()).join("\n"),
 		tmdb: {
