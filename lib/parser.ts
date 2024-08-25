@@ -1,15 +1,12 @@
 import qs from 'querystring';
 import * as cheerio from 'cheerio';
 import {
-	DataNode
-} from 'domhandler';
-import {
 	Film,
 	Viewing,
 	FilmPageData,
 	ActivityActionType,
 	ActivityFeedEntry,
-	ActivityFeedPage
+	ReviewsPage
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -229,14 +226,29 @@ export const parsePosterPage = (pageData: string): Film => {
 	};
 };
 
-export const parseViewingListPage = (pageData: string): Viewing[] => {
+export const parseViewingListPage = (pageData: string): ReviewsPage => {
 	const $ = cheerio.load(pageData);
 	let viewings: Viewing[] = [];
 	for(const viewingElement of $('.viewings-list > ul > li')) {
 		const viewing = parseViewingListElement($(viewingElement), $);
 		viewings.push(viewing);
 	}
-	return viewings;
+	const nextPageURL = $('.viewings-list .pagination .paginate-nextprev a.next').attr('href');
+	let nextPage: {href: string, page: number} | null;
+	if(nextPageURL) {
+		const pageParts = trimString(nextPageURL, '/').split('/');
+		let pageNum = Number.parseInt(pageParts[pageParts.length-1]);
+		nextPage = {
+			href: nextPageURL,
+			page: (!Number.isNaN(pageNum) ? pageNum : undefined)!
+		};
+	} else {
+		nextPage = null;
+	}
+	return {
+		items: viewings,
+		nextPage: nextPage
+	};
 };
 
 export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEntry[], end: boolean } => {

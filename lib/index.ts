@@ -3,8 +3,8 @@ import * as cheerio from 'cheerio';
 import {
 	Film,
 	FilmInfo,
-	Viewing,
-	ActivityFeedPage
+	ActivityFeedPage,
+	ReviewsPage
 } from './types';
 import * as lburls from './urls';
 import * as lbparse from './parser';
@@ -86,7 +86,7 @@ export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {im
 	return hrefParts[1];
 };
 
-export const getFriendsReviews = async (options: {username: string, filmSlug: string}): Promise<Viewing[]> => {
+export const getFriendsReviews = async (options: {username: string, filmSlug: string}): Promise<ReviewsPage> => {
 	const url = lburls.friendsReviewsURL(options);
 	const res = await fetch(url);
 	if(!res.ok) {
