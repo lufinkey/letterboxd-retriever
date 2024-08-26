@@ -1,4 +1,5 @@
 import qs from 'querystring';
+import urllib from 'url';
 import * as cheerio from 'cheerio';
 import {
 	Film,
@@ -29,6 +30,27 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		const viewing = parseViewingListElement($(reviewElement), $);
 		popularReviews.push(viewing);
 	}
+	const linksContainer = $('.text-link');
+	const tmdbTag = linksContainer.find('a[data-track-action="TMDb" i]');
+	const tmdbUrl = tmdbTag.attr('href');
+	let tmdbUrlPathParts: string[] | undefined = undefined;
+	if(tmdbUrl) {
+		try {
+			tmdbUrlPathParts = trimString((new urllib.URL(tmdbUrl)).pathname!, '/').split('/');
+		} catch(error) {
+			console.warn(error);
+		}
+	}
+	const imdbTag = linksContainer.find('a[data-track-action="IMDb" i]');
+	const imdbUrl = imdbTag.attr('href');
+	let imdbUrlPathParts: string[] | undefined = undefined;
+	if(imdbUrl) {
+		try {
+			imdbUrlPathParts = trimString((new urllib.URL(imdbUrl)).pathname!, '/').split('/');
+		} catch(error) {
+			console.warn(error);
+		}
+	}
 	return {
 		id: backdropTag.attr('data-film-id')!,
 		slug: backdropTag.attr('data-film-slug')!,
@@ -37,10 +59,15 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		year: $('section.film-header-group .releaseyear').text()?.trim(),
 		tagline: $('section .review.body-text .tagline').text(),
 		description: $('section .review.body-text div > p').toArray().map((p) => $(p).text()).join("\n"),
-		tmdb: {
-			id: body.attr('data-tmdb-id')!,
-			type: body.attr('data-tmdb-type') as any
-		},
+		tmdb: tmdbUrl ? {
+			url: tmdbUrl,
+			id: (tmdbUrlPathParts ? tmdbUrlPathParts[1] : undefined)!,
+			type: (tmdbUrlPathParts ? tmdbUrlPathParts[0] : undefined) as ('movie' | 'tv'),
+		} : undefined,
+		imdb: imdbUrl ? {
+			url: imdbUrl,
+			id: (imdbUrlPathParts ? imdbUrlPathParts[1] : undefined)!
+		} : undefined,
 		backdrop: {
 			default: backdropTag.attr('data-backdrop')!,
 			retina: backdropTag.attr('data-backdrop2x')!,
@@ -128,6 +155,9 @@ export const parseCSRF = (pageData: cheerio.CheerioAPI | string) => {
 };
 
 export const trimString = (str: string, char: string): string => {
+	if(!str) {
+		return str;
+	}
 	let start = 0;
 	let end = str.length;
 	while(start < str.length && str[start] == char) {

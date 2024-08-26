@@ -70,10 +70,15 @@ export interface FilmPageData {
 	year: string;
 	tagline: string;
 	description: string;
-	tmdb: {
+	tmdb?: {
 		id: string;
-		type: 'movie'
-	},
+		type: 'movie' | 'tv';
+		url: string;
+	} | undefined,
+	imdb?: {
+		id: string;
+		url: string;
+	} | undefined,
 	backdrop: {
 		default: string;
 		retina: string;
