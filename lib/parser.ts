@@ -7,7 +7,8 @@ import {
 	FilmPageData,
 	ActivityActionType,
 	ActivityFeedEntry,
-	ReviewsPage
+	ReviewsPage,
+	TmdbMediaType
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -62,7 +63,7 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		tmdb: tmdbUrl ? {
 			url: tmdbUrl,
 			id: (tmdbUrlPathParts ? tmdbUrlPathParts[1] : undefined)!,
-			type: (tmdbUrlPathParts ? tmdbUrlPathParts[0] : undefined) as ('movie' | 'tv'),
+			type: (tmdbUrlPathParts ? tmdbUrlPathParts[0] : undefined) as TmdbMediaType,
 		} : undefined,
 		imdb: imdbUrl ? {
 			url: imdbUrl,

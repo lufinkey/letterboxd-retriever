@@ -18,7 +18,7 @@ export enum GenreType {
 	Action = 'Action'
 }
 
-export interface FilmLDJson {
+export type FilmLDJson = {
 	image: string; // "https://a.ltrbxd.com/resized/film-poster/6/4/1/6/0/8/641608-twisters-0-230-0-345-crop.jpg?v=b1bb3d5cc7"
 	'@type': ObjectType.Movie,
 	director: {
@@ -60,9 +60,14 @@ export interface FilmLDJson {
 		ratingCount: number; // 324256
 		worstRating: number; // 0
 	}
-}
+};
 
-export interface FilmPageData {
+export enum TmdbMediaType {
+	Movie = 'movie',
+	TV = 'tv'
+};
+
+export type FilmPageData = {
 	id: string;
 	slug: string;
 	type: 'film';
@@ -72,7 +77,7 @@ export interface FilmPageData {
 	description: string;
 	tmdb?: {
 		id: string;
-		type: 'movie' | 'tv';
+		type: TmdbMediaType;
 		url: string;
 	} | undefined,
 	imdb?: {
@@ -85,9 +90,9 @@ export interface FilmPageData {
 		mobile: string
 	};
 	popularReviews: Viewing[];
-}
+};
 
-export interface FilmInfo {
+export type FilmInfo = {
 	pageData: FilmPageData;
 	ldJson: FilmLDJson;
-}
+};
