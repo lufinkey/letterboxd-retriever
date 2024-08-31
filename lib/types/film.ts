@@ -89,10 +89,42 @@ export type FilmPageData = {
 		retina: string;
 		mobile: string
 	};
+	cast: CastMember[];
+	crew: CrewMember[];
 	popularReviews: Viewing[];
 };
 
 export type FilmInfo = {
 	pageData: FilmPageData;
 	ldJson: FilmLDJson;
+};
+
+export type CastMember = {
+	href: string;
+	name: string;
+	role: string;
+};
+
+export enum CrewRoleType {
+	Director = 'Director',
+	Producer = 'Producer',
+	Writer = 'Writer',
+	Casting = 'Casting',
+	Editor = 'Editor',
+	Cinematography = 'Cinematography',
+	ExecutiveProducer = 'Executive Producer',
+	ProductionDesign = 'Production Design',
+	ArtDirection = 'Art Direction',
+	SetDecoration = 'Set Decoration',
+	Stunts = 'Stunts',
+	Composer = 'Composer',
+	Songs = 'Songs',
+	CostumeDesign = 'Costume Design',
+	Makeup = 'Makeup'
+}
+
+export type CrewMember = {
+	href: string;
+	name: string;
+	role: CrewRoleType | string;
 };

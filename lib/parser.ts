@@ -1,6 +1,7 @@
 import qs from 'querystring';
 import urllib from 'url';
 import * as cheerio from 'cheerio';
+import { Element } from 'domhandler';
 import {
 	Film,
 	Viewing,
@@ -8,7 +9,9 @@ import {
 	ActivityActionType,
 	ActivityFeedEntry,
 	ReviewsPage,
-	TmdbMediaType
+	TmdbMediaType,
+	CastMember,
+	CrewMember
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -16,6 +19,15 @@ const CSRF_TEXT_SUFFIX = "'";
 const POSESSIVE_TEXT_SUFFIX1 = "’s";
 const LDJSON_PREFIX = '/* <![CDATA[ */';
 const LDJSON_SUFFIX = '/* ]]> */';
+
+const crewRoleNameMap: {[key:string]:string} = {
+	'Directors': 'Director',
+	'Producers': 'Producer',
+	'Writers': 'Writer',
+	'Editors': 'Editor',
+	'Executive Producers': 'Executive Producer',
+	'Composers': 'Composer',
+};
 
 export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageData => {
 	let $: cheerio.CheerioAPI;
@@ -31,6 +43,7 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		const viewing = parseViewingListElement($(reviewElement), $);
 		popularReviews.push(viewing);
 	}
+	// parse tmdb and imdb links
 	const linksContainer = $('.text-link');
 	const tmdbTag = linksContainer.find('a[data-track-action="TMDb" i]');
 	const tmdbUrl = tmdbTag.attr('href');
@@ -50,6 +63,53 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			imdbUrlPathParts = trimString((new urllib.URL(imdbUrl)).pathname!, '/').split('/');
 		} catch(error) {
 			console.warn(error);
+		}
+	}
+	// parse cast
+	const cast: CastMember[] = [];
+	const castEntryTags = $('#tab-cast .cast-list a:not(#show-cast-overflow)');
+	for(const castEntryElement of castEntryTags) {
+		const castEntryTag = $(castEntryElement);
+		const role = castEntryTag.attr('title');
+		const personName = castEntryTag.text();
+		if(!personName) {
+			continue;
+		}
+		cast.push({
+			href: castEntryTag.attr('href')!,
+			name: personName,
+			role: role!
+		});
+	}
+	// parse crew
+	const crew: CrewMember[] = [];
+	const crewTitleTags = $('#tab-crew > h3:has(.crewrole)');
+	for(const crewEntryTitleElement of crewTitleTags) {
+		const crewEntryTitleTag = $(crewEntryTitleElement);
+		let role = crewEntryTitleTag.find('.crewrole.-full').text() ?? crewEntryTitleTag.find('.crewrole').text();
+		if(role in crewRoleNameMap) {
+			role = crewRoleNameMap[role];
+		}
+		let nextElement = crewEntryTitleElement.nextSibling;
+		while(nextElement && nextElement.nodeType != 1) {
+			nextElement = nextElement.nextSibling;
+		}
+		nextElement = nextElement as Element;
+		if(!nextElement || nextElement.name.toLowerCase() == 'h3') {
+			continue;
+		}
+		const personList = $(nextElement).find('.text-sluglist a');
+		for(const personElement of personList) {
+			const personTag = $(personElement);
+			const personName = personTag.text();
+			if(!personName) {
+				continue;
+			}
+			crew.push({
+				href: personTag.attr('href')!,
+				name: personName,
+				role: role
+			});
 		}
 	}
 	return {
@@ -74,11 +134,13 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			retina: backdropTag.attr('data-backdrop2x')!,
 			mobile: backdropTag.attr('data-backdrop-mobile')!
 		},
+		cast: cast,
+		crew: crew,
 		popularReviews: popularReviews
 	};
 };
 
-export const parseViewingListElement = (reviewTag: cheerio.Cheerio<cheerio.Element>, $: cheerio.CheerioAPI): Viewing => {
+export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): Viewing => {
 	const avatarTag = reviewTag.find('a.avatar');
 	const contextTag = reviewTag.find('.film-detail-content a.context');
 	const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
