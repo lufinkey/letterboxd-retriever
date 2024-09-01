@@ -4,7 +4,8 @@ import {
 	Film,
 	FilmInfo,
 	ActivityFeedPage,
-	ReviewsPage
+	ReviewsPage,
+	letterboxdError
 } from './types';
 import * as lburls from './urls';
 import * as lbparse from './parser';
@@ -28,7 +29,7 @@ export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdb
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw new Error(res.statusText);
+		throw letterboxdError(res.status, res.statusText);
 	}
 	const resData = await res.text();
 	const $ = cheerio.load(resData);
@@ -54,7 +55,7 @@ export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {im
 	});
 	if(!res.ok) {
 		res.body?.cancel();
-		throw new Error(res.statusText);
+		throw letterboxdError(res.status, res.statusText);
 	}
 	const filmHref = lburls.hrefFromURL(res.url);
 	let cmpHref = filmHref;
@@ -91,7 +92,7 @@ export const getFriendsReviews = async (options: {username: string, filmSlug: st
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw new Error(res.statusText);
+		throw letterboxdError(res.status, res.statusText);
 	}
 	const resData = await res.text();
 	return lbparse.parseViewingListPage(resData);
@@ -106,7 +107,7 @@ export const getFilmPoster = async (options: {
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw new Error(res.statusText);
+		throw letterboxdError(res.status, res.statusText);
 	}
 	const resData = await res.text();
 	return lbparse.parsePosterPage(resData);
@@ -126,7 +127,7 @@ export const getUserFollowingFeed = async (username: string, options: {
 	if(!csrf) {
 		const res = await fetch(feedPageURL);
 		if(!res.ok) {
-			throw new Error(res.statusText);
+			throw letterboxdError(res.status, res.statusText);
 		}
 		const resData = await res.text();
 		csrf = lbparse.parseCSRF(resData);
@@ -148,7 +149,7 @@ export const getUserFollowingFeed = async (username: string, options: {
 	});
 	if(!res.ok) {
 		res.body?.cancel();
-		throw new Error(res.statusText);
+		throw letterboxdError(res.status, res.statusText);
 	}
 	const resData = await res.text();
 	//console.log(resData);
