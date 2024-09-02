@@ -13,7 +13,9 @@ import * as lbparse from './parser';
 export * from './types';
 export { BASE_URL } from './urls';
 
-export const getFilmInfo = async (film: ({slug: string} | {href: string} | {tmdbId: string} | {imdbId: string})): Promise<FilmInfo> => {
+export type GetFilmInfoOptions = ({slug: string} | {href: string} | {tmdbId: string} | {imdbId: string});
+
+export const getFilmInfo = async (film: GetFilmInfoOptions): Promise<FilmInfo> => {
 	let url: string;
 	if('slug' in film && film.slug) {
 		url = lburls.filmPageURLFromSlug(film.slug);
