@@ -20,9 +20,10 @@ export type Viewing = {
 
 export type Film = {
 	id?: string;
-	imageURL?: string | undefined;
+	href: string;
+	type: 'film' | string;
 	name: string;
 	slug: string;
-	href: string;
 	year?: string;
+	imageURL?: string | undefined;
 };

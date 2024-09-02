@@ -311,10 +311,12 @@ export const parsePosterPage = (pageData: string): Film => {
 	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
 	const posterTag = $('.film-poster');
 	const imgTag = posterTag.find('img');
+	const href = posterTag.attr('data-film-link');
 	return {
 		id: posterTag.attr('data-film-id'),
+		type: href ? trimString(href, '/').split('/')[0] : 'film',
 		imageURL: parseCacheBusterURL(imgTag.attr('src'), 'v'),
-		href: posterTag.attr('data-film-link')!,
+		href: href!,
 		slug: posterTag.attr('data-film-slug')!,
 		name: posterTag.attr('data-film-name')!,
 		year: posterTag.attr('data-film-release-year')
@@ -423,8 +425,9 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					};
 					film = {
 						name: filmName!,
+						type: objType,
 						slug: filmSlug!,
-						href: (filmSlug ? `${objType}/${filmSlug}` : undefined)!
+						href: (filmSlug ? `/${objType}/${filmSlug}` : undefined)!
 					};
 				} else {
 					// handle single action
@@ -446,11 +449,12 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								// added to watchlist
 								actionTypes = [ActivityActionType.AddedToWatchlist];
 								const filmHref = objectLink.attr('href');
-								const filmSlug = filmHref ? trimString(filmHref, '/').split('/')[1] : undefined;
+								const filmHrefParts = filmHref ? trimString(filmHref, '/').split('/') : [];
 								film = {
-									name: objectLink.text(),
-									slug: filmSlug!,
-									href: filmHref!
+									href: filmHref!,
+									type: filmHrefParts[0] ?? 'film',
+									slug: filmHrefParts[1]!,
+									name: objectLink.text()
 								};
 							}
 						}
@@ -496,6 +500,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								};
 								film = {
 									name: filmName,
+									type: filmType,
 									slug: filmSlug,
 									href: (filmSlug ? `/${filmType}/${filmSlug}/` : undefined)!
 								};
@@ -571,6 +576,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				};
 				film = {
 					id: filmId,
+					type: filmType,
 					name: filmName,
 					href: (filmSlugFromViewing ? `/${filmType}/${filmSlugFromViewing}/` : undefined)!,
 					slug: filmSlug ?? filmSlugFromViewing,
