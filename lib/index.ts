@@ -115,7 +115,7 @@ export type GetFilmPosterOptions = lburls.FilmURLOptions & {
 export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film> => {
 	const posterOpts = {...options};
 	if(!posterOpts.posterSize) {
-		posterOpts.posterSize = {width:140,height:210};
+		posterOpts.posterSize = {width:150,height:225};
 	}
 	const url = lburls.filmPosterURL(posterOpts as lburls.FilmPosterURLOptions);
 	//console.log(`fetching poster from url ${url}`);
