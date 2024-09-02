@@ -105,14 +105,20 @@ export const getFriendsReviews = async (options: GetFriendsReviewsOptions): Prom
 	return lbparse.parseViewingListPage(resData);
 };
 
-export type GetFilmPosterOptions = {
-	slug: string,
-	width: number,
-	height: number
+export type GetFilmPosterOptions = lburls.FilmURLOptions & {
+	posterSize?: {
+		width: number;
+		height: number
+	}
 };
 
 export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film> => {
-	const url = lburls.filmPosterURL(options);
+	const posterOpts = {...options};
+	if(!posterOpts.posterSize) {
+		posterOpts.posterSize = {width:140,height:210};
+	}
+	const url = lburls.filmPosterURL(posterOpts as lburls.FilmPosterURLOptions);
+	//console.log(`fetching poster from url ${url}`);
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
@@ -167,24 +173,26 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	const result = lbparse.parseAjaxActivityFeed(resData);
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (result.items?.length ?? 0) > 0) {
-		const posterSize = options.posterSize ?? {width:280,height:420};
-		const posterPromises: {[slug: string]: Promise<Film>} = {};
+		const posterPromises: {[href: string]: Promise<Film>} = {};
 		result.items = await Promise.all(result.items.map(async (item) => {
 			if(item.film) {
-				if(!item.film.imageURL || !item.film.year) {
-					const filmSlug = item.film.slug;
-					let promise = posterPromises[filmSlug];
+				if((!item.film.imageURL || !item.film.year) && item.film.href) {
+					const filmHref = item.film.href;
+					let promise = posterPromises[filmHref];
 					if(!promise) {
 						promise = getFilmPoster({
-							slug: filmSlug,
-							width: posterSize.width,
-							height: posterSize.height
+							href: filmHref,
+							posterSize: options.posterSize
 						});
-						posterPromises[filmSlug] = promise;
+						posterPromises[filmHref] = promise;
 					}
-					const film = await promise;
-					item.film.imageURL = film.imageURL;
-					item.film.year = film.year;
+					try {
+						const film = await promise;
+						item.film.imageURL = film.imageURL;
+						item.film.year = film.year;
+					} catch(error) {
+						console.warn(error);
+					}
 				}
 			}
 			return item;

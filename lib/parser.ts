@@ -427,7 +427,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 						name: filmName!,
 						type: objType,
 						slug: filmSlug!,
-						href: (filmSlug ? `/${objType}/${filmSlug}` : undefined)!
+						href: (filmSlug ? `/${objType}/${filmSlug}/` : undefined)!
 					};
 				} else {
 					// handle single action

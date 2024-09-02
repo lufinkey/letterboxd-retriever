@@ -60,20 +60,44 @@ export const friendsReviewsURL = (options: FriendsReviewsOptions) => {
 	if('filmSlug' in options && options.filmSlug) {
 		url += `/film/${options.filmSlug}`;
 	} else if('href' in options && options.href) {
+		if(!options.href.startsWith('/')) {
+			url += '/';
+		}
 		url += options.href;
 	} else {
 		throw new Error("No id provided");
 	}
-	url += '/reviews';
+	if(!url.endsWith('/')) {
+		url += '/';
+	}
+	url += 'reviews';
 	return url;
 };
 
-export const filmPosterURL = (options: {
-	slug: string,
-	width: number,
-	height: number
-}) => {
-	return `${BASE_URL}/ajax/poster/film/${options.slug}/std/${options.width}x${options.height}`;
+export type FilmPosterURLOptions = FilmURLOptions & {
+	posterSize: {
+		width: number,
+		height: number
+	}
+};
+
+export const filmPosterURL = (options: FilmPosterURLOptions) => {
+	let url = `${BASE_URL}/ajax/poster`;
+	if('filmSlug' in options && options.filmSlug) {
+		url += `/film/${options.filmSlug}`;
+	} else if('href' in options && options.href) {
+		if(!options.href.startsWith('/')) {
+			url += '/';
+		}
+		url += options.href;
+	} else {
+		throw new Error("No id provided");
+	}
+	if(!url.endsWith('/')) {
+		url += '/';
+	}
+	url += `std/${options.posterSize.width}x${options.posterSize.height}`;
+	return url;
 };
 
 export const followingActivityFeedPageURL = (options: {
