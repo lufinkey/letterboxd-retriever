@@ -49,11 +49,21 @@ export const filmPageURLFromImdbID = (imdbId: string) => {
 	return `${BASE_URL}/imdb/${imdbId}`;
 };
 
-export const friendsReviewsURL = (options: {
-	username: string,
-	filmSlug: string
-}) => {
-	return `${BASE_URL}/${options.username}/friends/film/${options.filmSlug}/reviews`;
+export type FriendsReviewsOptions = {
+	username: string;
+} & ({filmSlug: string} | {href: string});
+
+export const friendsReviewsURL = (options: FriendsReviewsOptions) => {
+	let url = `${BASE_URL}/${options.username}/friends`;
+	if('filmSlug' in options && options.filmSlug) {
+		url += `/film/${options.filmSlug}`;
+	} else if('href' in options && options.href) {
+		url += options.href;
+	} else {
+		throw new Error("No id provided");
+	}
+	url += '/reviews';
+	return url;
 };
 
 export const filmPosterURL = (options: {

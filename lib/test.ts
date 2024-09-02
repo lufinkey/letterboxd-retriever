@@ -37,7 +37,7 @@ import * as letterboxd from './index';
 
 	console.log("Testing getFilmInfo with slug");
 	try {
-		const result = await letterboxd.getFilmInfo({slug:'legend'});
+		const result = await letterboxd.getFilmInfo({filmSlug:'legend'});
 		console.log(JSON.stringify(result, null, '\t'));
 	} catch(error) {
 		console.error(error);

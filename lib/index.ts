@@ -13,12 +13,12 @@ import * as lbparse from './parser';
 export * from './types';
 export { BASE_URL } from './urls';
 
-export type GetFilmInfoOptions = ({slug: string} | {href: string} | {tmdbId: string} | {imdbId: string});
+export type GetFilmInfoOptions = ({filmSlug: string} | {href: string} | {tmdbId: string} | {imdbId: string});
 
 export const getFilmInfo = async (film: GetFilmInfoOptions): Promise<FilmInfo> => {
 	let url: string;
-	if('slug' in film && film.slug) {
-		url = lburls.filmPageURLFromSlug(film.slug);
+	if('filmSlug' in film && film.filmSlug) {
+		url = lburls.filmPageURLFromSlug(film.filmSlug);
 	} else if('href' in film && film.href) {
 		url = lburls.urlFromHref(film.href);
 	} else if('tmdbId' in film && film.tmdbId) {
@@ -43,7 +43,9 @@ export const getFilmInfo = async (film: GetFilmInfoOptions): Promise<FilmInfo> =
 	};
 };
 
-export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string | null> => {
+export type GetFilmFromExternalIDOptions = ({tmdbId: string} | {imdbId: string});
+
+export const getFilmHrefFromExternalID = async (options: GetFilmFromExternalIDOptions): Promise<string | null> => {
 	let url: string;
 	if('tmdbId' in options && options.tmdbId) {
 		url = lburls.filmPageURLFromTmdbID(options.tmdbId);
@@ -77,7 +79,7 @@ export const getFilmHrefFromExternalID = async (options: ({tmdbId: string} | {im
 	return filmHref;
 };
 
-export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {imdbId: string})): Promise<string | null> => {
+export const getFilmSlugFromExternalID = async (options: GetFilmFromExternalIDOptions): Promise<string | null> => {
 	const href = await getFilmHrefFromExternalID(options);
 	if(!href) {
 		return null;
@@ -89,7 +91,9 @@ export const getFilmSlugFromExternalID = async (options: ({tmdbId: string} | {im
 	return hrefParts[1];
 };
 
-export const getFriendsReviews = async (options: {username: string, filmSlug: string}): Promise<ReviewsPage> => {
+export type GetFriendsReviewsOptions = lburls.FriendsReviewsOptions;
+
+export const getFriendsReviews = async (options: GetFriendsReviewsOptions): Promise<ReviewsPage> => {
 	const url = lburls.friendsReviewsURL(options);
 	const res = await fetch(url);
 	if(!res.ok) {
@@ -100,11 +104,13 @@ export const getFriendsReviews = async (options: {username: string, filmSlug: st
 	return lbparse.parseViewingListPage(resData);
 };
 
-export const getFilmPoster = async (options: {
+export type GetFilmPosterOptions = {
 	slug: string,
 	width: number,
 	height: number
-}): Promise<Film> => {
+};
+
+export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film> => {
 	const url = lburls.filmPosterURL(options);
 	const res = await fetch(url);
 	if(!res.ok) {
@@ -115,12 +121,14 @@ export const getFilmPoster = async (options: {
 	return lbparse.parsePosterPage(resData);
 };
 
-export const getUserFollowingFeed = async (username: string, options: {
+export type GetUserFollowingFeedOptions = {
 	after?: number | string | undefined,
 	csrf?: string | undefined,
 	includeAjaxContent?: boolean,
 	posterSize?: {width: number, height: number}
-} = {}): Promise<ActivityFeedPage> => {
+};
+
+export const getUserFollowingFeed = async (username: string, options: GetUserFollowingFeedOptions = {}): Promise<ActivityFeedPage> => {
 	const feedPageURL = lburls.followingActivityFeedPageURL({
 		username: username
 	});
