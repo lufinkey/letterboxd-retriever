@@ -6,6 +6,7 @@ import {
 	ActivityFeedPage,
 	ReviewsPage,
 	PosterSize,
+	FilmsPage,
 	letterboxdError
 } from './types';
 import * as lburls from './urls';
@@ -176,7 +177,7 @@ export const fetchFilmPostersForItems = async <TItem>(
 export type GetUserFollowingFeedOptions = {
 	after?: number | string | undefined,
 	csrf?: string | undefined,
-	includeAjaxContent?: boolean,
+	includeAjaxContent?: boolean;
 	posterSize?: {width: number, height: number}
 };
 
@@ -224,4 +225,26 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 		...result,
 		csrf: csrf
 	};
+};
+
+
+export type GetSimilarFilmsOptions = lburls.FilmURLOptions & {
+	includeAjaxContent?: boolean;
+	posterSize?: {width: number, height: number};
+};
+
+export const getSimilar = async (options: GetSimilarFilmsOptions): Promise<FilmsPage> => {
+	const url = lburls.similarItemsURL(options);
+	const res = await fetch(url);
+	if(!res.ok) {
+		res.body?.cancel();
+		throw letterboxdError(res.status, res.statusText);
+	}
+	const resData = await res.text();
+	const page = lbparse.parseFilmsPage(resData);
+	// fetch ajax content if needed
+	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
+		await fetchFilmPostersForItems(page.items, (film) => film, {posterSize:options.posterSize});
+	}
+	return page;
 };

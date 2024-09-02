@@ -83,4 +83,15 @@ import * as letterboxd from './index';
 	} catch(error) {
 		console.error(error);
 	}
+
+	console.log("Testing getSimilar");
+	try {
+		const result = await letterboxd.getSimilar({href:'/film/deadpool-wolverine'});
+		console.log(JSON.stringify(result, null, '\t'));
+	} catch(error) {
+		console.error(error);
+	}
+	console.log();
+	console.log();
+	console.log();
 })();

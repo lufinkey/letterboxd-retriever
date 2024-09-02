@@ -59,14 +59,14 @@ export type FriendsReviewsOptions = {
 export const friendsReviewsURL = (options: FriendsReviewsOptions) => {
 	let url = `${BASE_URL}/${options.username}/friends`;
 	if('filmSlug' in options && options.filmSlug) {
-		url += `/film/${options.filmSlug}`;
+		url += `/film/${options.filmSlug}/`;
 	} else if('href' in options && options.href) {
 		if(!options.href.startsWith('/')) {
 			url += '/';
 		}
 		url += options.href;
 	} else {
-		throw new Error("No id provided");
+		throw new Error("No href or slug provided");
 	}
 	if(!url.endsWith('/')) {
 		url += '/';
@@ -82,7 +82,7 @@ export type FilmPosterURLOptions = FilmURLOptions & {
 export const filmPosterURL = (options: FilmPosterURLOptions) => {
 	let url = `${BASE_URL}/ajax/poster`;
 	if('filmSlug' in options && options.filmSlug) {
-		url += `/film/${options.filmSlug}`;
+		url += `/film/${options.filmSlug}/`;
 	} else if('href' in options && options.href) {
 		if(!options.href.startsWith('/')) {
 			url += '/';
@@ -114,4 +114,24 @@ export const followingActivityFeedAjaxURL = (options: {
         url += `&after=${options.after}`;
     }
     return url;
+};
+
+
+export const similarItemsURL = (options: FilmURLOptions) => {
+	let url = BASE_URL;
+	if('filmSlug' in options && options.filmSlug) {
+		url += `/film/${options.filmSlug}/`;
+	} else if('href' in options && options.href) {
+		if(!options.href.startsWith('/')) {
+			url += '/';
+		}
+		url += options.href;
+	} else {
+		throw new Error("No href or slug provided");
+	}
+	if(!url.endsWith('/')) {
+		url += '/';
+	}
+	url += 'similar';
+	return url;
 };

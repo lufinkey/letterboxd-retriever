@@ -12,7 +12,8 @@ import {
 	TmdbMediaType,
 	CastMember,
 	CrewMember,
-	RelatedFilmsList
+	RelatedFilmsList,
+	FilmsPage
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -668,4 +669,21 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 		items: feedItems,
 		end: end
 	};
+};
+
+
+export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage => {
+	let $: cheerio.CheerioAPI;
+	if(typeof(pageData) === 'string') {
+		$ = cheerio.load(pageData);
+	} else {
+		$ = pageData;
+	}
+	const items: Film[] = [];
+	const filmGridItems = $('ul.poster-list.film-list > li');
+	for(const element of filmGridItems) {
+		const film = parseFilmPosterContainer($(element));
+		items.push(film);
+	}
+	return {items};
 };
