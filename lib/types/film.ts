@@ -1,6 +1,7 @@
 import {
 	User,
-	Viewing
+	Viewing,
+	Film
 } from './common';
 
 export enum ObjectType {
@@ -91,6 +92,8 @@ export type FilmPageData = {
 	};
 	cast: CastMember[];
 	crew: CrewMember[];
+	relatedFilms: RelatedFilmsList | null;
+	similarFilms: RelatedFilmsList | null;
 	popularReviews: Viewing[];
 };
 
@@ -127,4 +130,11 @@ export type CrewMember = {
 	href: string;
 	name: string;
 	role: CrewRoleType | string;
+};
+
+export type RelatedFilmsList = {
+	title: string;
+	href: string;
+	hasMore: boolean;
+	items: Film[];
 };

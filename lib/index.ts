@@ -5,6 +5,7 @@ import {
 	FilmInfo,
 	ActivityFeedPage,
 	ReviewsPage,
+	PosterSize,
 	letterboxdError
 } from './types';
 import * as lburls from './urls';
@@ -14,18 +15,21 @@ export * from './types';
 export { BASE_URL } from './urls';
 
 export type FilmURLOptions = lburls.FilmURLOptions;
-export type GetFilmOptions = (FilmURLOptions | {tmdbId: string} | {imdbId: string});
+export type GetFilmOptions = (FilmURLOptions | {tmdbId: string} | {imdbId: string}) & {
+	includeAjaxContent?: boolean;
+	relatedFilmsPosterSize?: PosterSize;
+};
 
-export const getFilmInfo = async (film: GetFilmOptions): Promise<FilmInfo> => {
+export const getFilmInfo = async (options: GetFilmOptions): Promise<FilmInfo> => {
 	let url: string;
-	if('filmSlug' in film && film.filmSlug) {
-		url = lburls.filmPageURLFromSlug(film.filmSlug);
-	} else if('href' in film && film.href) {
-		url = lburls.urlFromHref(film.href);
-	} else if('tmdbId' in film && film.tmdbId) {
-		url = lburls.filmPageURLFromTmdbID(film.tmdbId);
-	} else if('imdbId' in film && film.imdbId) {
-		url = lburls.filmPageURLFromImdbID(film.imdbId);
+	if('filmSlug' in options && options.filmSlug) {
+		url = lburls.filmPageURLFromSlug(options.filmSlug);
+	} else if('href' in options && options.href) {
+		url = lburls.urlFromHref(options.href);
+	} else if('tmdbId' in options && options.tmdbId) {
+		url = lburls.filmPageURLFromTmdbID(options.tmdbId);
+	} else if('imdbId' in options && options.imdbId) {
+		url = lburls.filmPageURLFromImdbID(options.imdbId);
 	} else {
 		throw new Error(`No slug, href, or id was provided`);
 	}
@@ -38,6 +42,11 @@ export const getFilmInfo = async (film: GetFilmOptions): Promise<FilmInfo> => {
 	const $ = cheerio.load(resData);
 	const ldJson = lbparse.parseLdJson($);
 	const pageData = lbparse.parseFilmPage($);
+	// fetch ajax content if needed
+	if((options.includeAjaxContent ?? true) && ((pageData?.relatedFilms?.items?.length ?? 0) > 0 || (pageData?.similarFilms?.items?.length ?? 0) > 0)) {
+		const itemsToFetch = (pageData.relatedFilms?.items ?? []).concat(pageData.similarFilms?.items ?? []);
+		await fetchFilmPostersForItems(itemsToFetch, (film) => film, {posterSize:options.relatedFilmsPosterSize});
+	}
 	return {
 		pageData,
 		ldJson
@@ -106,10 +115,7 @@ export const getFriendsReviews = async (options: GetFriendsReviewsOptions): Prom
 };
 
 export type GetFilmPosterOptions = lburls.FilmURLOptions & {
-	posterSize?: {
-		width: number;
-		height: number
-	}
+	posterSize?: PosterSize
 };
 
 export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film> => {
@@ -125,7 +131,46 @@ export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film
 		throw letterboxdError(res.status, res.statusText);
 	}
 	const resData = await res.text();
-	return lbparse.parsePosterPage(resData);
+	return lbparse.parseFilmPosterPage(resData);
+};
+
+export const fetchFilmPostersForItems = async <TItem>(
+	items: TItem[],
+	filmFromItem: ((item: TItem) => Film | undefined),
+	options: {posterSize?: PosterSize}): Promise<void> => {
+	// fetch film posters for all the items
+	const posterPromises: {[href: string]: Promise<Film>} = {};
+	await Promise.all(items.map(async (item) => {
+		// ensure item has a film
+		const film = filmFromItem(item);
+		if(!film) {
+			return;
+		}
+		const filmHref = film?.href;
+		if(filmHref) {
+			// fetch the poster or wait for task already in progress
+			let promise = posterPromises[filmHref];
+			if(!promise) {
+				promise = getFilmPoster({
+					href: filmHref,
+					posterSize: options.posterSize
+				});
+				posterPromises[filmHref] = promise;
+			}
+			try {
+				const fetchedFilm = await promise;
+				// apply fetched data
+				if(fetchedFilm.imageURL) {
+					film.imageURL = fetchedFilm.imageURL;
+				}
+				if(fetchedFilm.year) {
+					film.year = fetchedFilm.year;
+				}
+			} catch(error) {
+				console.warn(error);
+			}
+		}
+	}));
 };
 
 export type GetUserFollowingFeedOptions = {
@@ -173,30 +218,7 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	const result = lbparse.parseAjaxActivityFeed(resData);
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (result.items?.length ?? 0) > 0) {
-		const posterPromises: {[href: string]: Promise<Film>} = {};
-		result.items = await Promise.all(result.items.map(async (item) => {
-			if(item.film) {
-				if((!item.film.imageURL || !item.film.year) && item.film.href) {
-					const filmHref = item.film.href;
-					let promise = posterPromises[filmHref];
-					if(!promise) {
-						promise = getFilmPoster({
-							href: filmHref,
-							posterSize: options.posterSize
-						});
-						posterPromises[filmHref] = promise;
-					}
-					try {
-						const film = await promise;
-						item.film.imageURL = film.imageURL;
-						item.film.year = film.year;
-					} catch(error) {
-						console.warn(error);
-					}
-				}
-			}
-			return item;
-		}));
+		await fetchFilmPostersForItems(result.items, (item) => item?.film, {posterSize:options.posterSize});
 	}
 	return {
 		...result,

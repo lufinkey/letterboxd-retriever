@@ -11,7 +11,8 @@ import {
 	ReviewsPage,
 	TmdbMediaType,
 	CastMember,
-	CrewMember
+	CrewMember,
+	RelatedFilmsList
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -38,6 +39,7 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 	}
 	const body = $('body');
 	const backdropTag = $('#backdrop');
+	// parse reviews
 	let popularReviews: Viewing[] = [];
 	for(const reviewElement of $('ul.film-popular-review > li')) {
 		const viewing = parseViewingListElement($(reviewElement), $);
@@ -112,6 +114,19 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			});
 		}
 	}
+	// parse similar films
+	let similarFilms: RelatedFilmsList | null = null;
+	const similarFilmsContainer = $('section.related-films:not(#related)');
+	if(similarFilmsContainer.index() != -1) {
+		similarFilms = parseRelatedFilmsContainer(similarFilmsContainer, $);
+	}
+	// parse related films
+	let relatedFilms: RelatedFilmsList | null = null;
+	const relatedFilmsContainer = $('#related.related-films');
+	if(relatedFilmsContainer.index() != -1) {
+		relatedFilms = parseRelatedFilmsContainer(relatedFilmsContainer, $);
+	}
+	// create film info
 	return {
 		id: backdropTag.attr('data-film-id')!,
 		slug: backdropTag.attr('data-film-slug')!,
@@ -130,35 +145,32 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			id: (imdbUrlPathParts ? imdbUrlPathParts[1] : undefined)!
 		} : undefined,
 		backdrop: {
-			default: backdropTag.attr('data-backdrop')!,
-			retina: backdropTag.attr('data-backdrop2x')!,
-			mobile: backdropTag.attr('data-backdrop-mobile')!
+			default: parseCacheBusterURL(backdropTag.attr('data-backdrop'), 'v')!,
+			retina: parseCacheBusterURL(backdropTag.attr('data-backdrop2x'), 'v')!,
+			mobile: parseCacheBusterURL(backdropTag.attr('data-backdrop-mobile'), 'v')!
 		},
 		cast: cast,
 		crew: crew,
+		similarFilms,
+		relatedFilms,
 		popularReviews: popularReviews
 	};
 };
 
-export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): Viewing => {
-	const avatarTag = reviewTag.find('a.avatar');
-	const contextTag = reviewTag.find('.film-detail-content a.context');
-	const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
-	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
+export const parseRelatedFilmsContainer = (element: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): RelatedFilmsList => {
+	const href = element.find('.section-heading a').attr('href');
+	const title = element.find('.section-heading').text().trim();
+	const hasMore = element.find('.more-link').index() != -1;
+	const items: Film[] = [];
+	for(const posterContainer of element.find('ul.poster-list > li')) {
+		const film = parseFilmPosterContainer($(posterContainer));
+		items.push(film);
+	}
 	return {
-		id: reviewTag.attr('data-viewing-id'),
-		user: {
-			imageURL: parseCacheBusterURL(avatarTag.find('img').attr('src'), 'v'),
-			href: avatarTag.attr('href')!,
-			username: reviewTag.attr('data-person')!,
-			displayName: contextTag.find('.name').text()!
-		},
-		href: contextTag.attr('href')!,
-		rating: parseRatingString(reviewTag.find('.rating').text()),
-		liked: reviewTag.find('.icon-liked').index() !== -1,
-		text: (collapsedTextTag.index() != -1 ? collapsedTextTag.find('> p') : bodyTextTag.find('> p')).toArray().map((p) => $(p).text()).join("\n"),
-		fullTextHref: bodyTextTag.attr('data-full-text-url'),
-		hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined
+		href: href!,
+		title: title!,
+		hasMore: hasMore,
+		items
 	};
 };
 
@@ -301,24 +313,44 @@ const parseCacheBusterURL = (url: string | undefined, busterKey: string): string
 	const query = qs.parse(url.substring(queryIndex+1));
 	delete query[busterKey];
 	let urlWithoutQuery = url.substring(0, queryIndex);
-	if(Object.keys(query).length == 0) {
+	let hasQueryEntry = false;
+	for(const _ in query) {
+		hasQueryEntry = true;
+		break;
+	}
+	if(!hasQueryEntry) {
 		return urlWithoutQuery;
 	}
 	return `${urlWithoutQuery}?${qs.stringify(query)}`;
 };
 
-export const parsePosterPage = (pageData: string): Film => {
+export const parseFilmPosterPage = (pageData: string): Film => {
 	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
-	const posterTag = $('.film-poster');
+	return parseFilmPosterContainer($.root());
+};
+
+export const parseFilmPosterContainer = (element: cheerio.Cheerio<any>): Film => {
+	const posterTag = element.find('.film-poster');
 	const imgTag = posterTag.find('img');
-	const href = posterTag.attr('data-film-link');
+	const href = posterTag.attr('data-film-link') ?? posterTag.attr('data-target-link');
+	let type = posterTag.attr('data-type');
+	let slug = posterTag.attr('data-film-slug');
+	if(!type || !slug) {
+		const hrefParts = href ? trimString(href, '/').split('/') : [];
+		if(!type) {
+			type = hrefParts[0];
+		}
+		if(!slug) {
+			slug = hrefParts[1];
+		}
+	}
 	return {
 		id: posterTag.attr('data-film-id'),
-		type: href ? trimString(href, '/').split('/')[0] : 'film',
-		imageURL: parseCacheBusterURL(imgTag.attr('src'), 'v'),
+		type: type ?? 'film',
 		href: href!,
-		slug: posterTag.attr('data-film-slug')!,
-		name: posterTag.attr('data-film-name')!,
+		imageURL: parseCacheBusterURL(imgTag.attr('src'), 'v'),
+		slug: slug!,
+		name: (posterTag.attr('data-film-name') ?? imgTag.attr('alt'))!,
 		year: posterTag.attr('data-film-release-year')
 	};
 };
@@ -345,6 +377,28 @@ export const parseViewingListPage = (pageData: string): ReviewsPage => {
 	return {
 		items: viewings,
 		nextPage: nextPage
+	};
+};
+
+export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): Viewing => {
+	const avatarTag = reviewTag.find('a.avatar');
+	const contextTag = reviewTag.find('.film-detail-content a.context');
+	const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
+	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
+	return {
+		id: reviewTag.attr('data-viewing-id'),
+		user: {
+			imageURL: parseCacheBusterURL(avatarTag.find('img').attr('src'), 'v'),
+			href: avatarTag.attr('href')!,
+			username: reviewTag.attr('data-person')!,
+			displayName: contextTag.find('.name').text()!
+		},
+		href: contextTag.attr('href')!,
+		rating: parseRatingString(reviewTag.find('.rating').text()),
+		liked: reviewTag.find('.icon-liked').index() !== -1,
+		text: (collapsedTextTag.index() != -1 ? collapsedTextTag.find('> p') : bodyTextTag.find('> p')).toArray().map((p) => $(p).text()).join("\n"),
+		fullTextHref: bodyTextTag.attr('data-full-text-url'),
+		hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined
 	};
 };
 

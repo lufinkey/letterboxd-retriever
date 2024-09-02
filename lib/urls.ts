@@ -1,3 +1,4 @@
+import { PosterSize } from './types';
 
 export const HOST = 'letterboxd.com';
 export const BASE_URL = `https://${HOST}`;
@@ -75,10 +76,7 @@ export const friendsReviewsURL = (options: FriendsReviewsOptions) => {
 };
 
 export type FilmPosterURLOptions = FilmURLOptions & {
-	posterSize: {
-		width: number,
-		height: number
-	}
+	posterSize: PosterSize
 };
 
 export const filmPosterURL = (options: FilmPosterURLOptions) => {

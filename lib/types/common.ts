@@ -27,3 +27,8 @@ export type Film = {
 	year?: string;
 	imageURL?: string | undefined;
 };
+
+export type PosterSize = {
+	width: number;
+	height: number;
+};
