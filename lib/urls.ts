@@ -19,6 +19,8 @@ export interface PersonalActivityFeedOptions {
 	incomingActivity?: boolean;
 }
 
+export type FilmURLOptions = ({filmSlug: string} | {href: string});
+
 export const urlFromHref = (href: string) => {
 	if(href.indexOf(':') !== -1) {
 		return href;
@@ -51,7 +53,7 @@ export const filmPageURLFromImdbID = (imdbId: string) => {
 
 export type FriendsReviewsOptions = {
 	username: string;
-} & ({filmSlug: string} | {href: string});
+} & FilmURLOptions;
 
 export const friendsReviewsURL = (options: FriendsReviewsOptions) => {
 	let url = `${BASE_URL}/${options.username}/friends`;
