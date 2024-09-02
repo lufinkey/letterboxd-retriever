@@ -167,7 +167,7 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	const result = lbparse.parseAjaxActivityFeed(resData);
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (result.items?.length ?? 0) > 0) {
-		const posterSize = options.posterSize ?? {width: 140,height:210};
+		const posterSize = options.posterSize ?? {width:280,height:420};
 		const posterPromises: {[slug: string]: Promise<Film>} = {};
 		result.items = await Promise.all(result.items.map(async (item) => {
 			if(item.film) {
