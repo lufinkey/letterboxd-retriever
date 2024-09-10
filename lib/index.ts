@@ -1,5 +1,5 @@
 
-import * as cheerio from 'cheerio/lib/slim';
+import * as cheerio from 'cheerio';
 import {
 	Film,
 	FilmInfo,
