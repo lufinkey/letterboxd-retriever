@@ -1,6 +1,6 @@
 import qs from 'querystring';
 import urllib from 'url';
-import * as cheerio from 'cheerio';
+import * as cheerio from 'cheerio/lib/slim';
 import { Element } from 'domhandler';
 import {
 	Film,

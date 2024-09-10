@@ -94,4 +94,9 @@ import * as letterboxd from './index';
 	console.log();
 	console.log();
 	console.log();
+
+	// wait
+	/*await new Promise((resolve, reject) => {
+		setTimeout(resolve, 8000);
+	});*/
 })();
