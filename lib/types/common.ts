@@ -36,6 +36,12 @@ export type FilmList = {
 	totalCount?: number;
 };
 
+export type PageBackdrop = {
+	default: string;
+	retina: string;
+	mobile: string
+};
+
 export type PosterSize = {
 	width: number;
 	height: number;

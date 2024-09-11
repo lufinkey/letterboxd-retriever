@@ -1,7 +1,8 @@
 import {
 	User,
 	Viewing,
-	Film
+	Film,
+	PageBackdrop
 } from './common';
 
 export enum ObjectType {
@@ -85,11 +86,7 @@ export type FilmPageData = {
 		id: string;
 		url: string;
 	} | undefined,
-	backdrop: {
-		default: string;
-		retina: string;
-		mobile: string
-	};
+	backdrop: PageBackdrop;
 	cast: CastMember[];
 	crew: CrewMember[];
 	relatedFilms: RelatedFilmsList | null;

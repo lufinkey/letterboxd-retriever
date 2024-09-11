@@ -1,5 +1,8 @@
 
-import { Film } from './common';
+import {
+	Film,
+	PageBackdrop
+} from './common';
 
 export type FilmsPage = {
 	items: Film[]
@@ -15,5 +18,6 @@ export type FilmListPage = {
 	items: FilmListItem[];
 	prevPageHref: string | null;
 	nextPageHref: string | null;
-	totalCount: number | undefined;
+	totalCount?: number | undefined;
+	backdrop?: PageBackdrop | null
 };

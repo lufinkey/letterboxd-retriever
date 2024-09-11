@@ -17,7 +17,8 @@ import {
 	FilmsPage,
 	ErrorPage,
 	FilmListItem,
-	FilmListPage
+	FilmListPage,
+	PageBackdrop
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -33,6 +34,14 @@ const crewRoleNameMap: {[key:string]:string} = {
 	'Editors': 'Editor',
 	'Executive Producers': 'Executive Producer',
 	'Composers': 'Composer',
+};
+
+export const parsePageBackdropTag = (backdropTag: cheerio.Cheerio<any>): PageBackdrop => {
+	return {
+		default: parseCacheBusterURL(backdropTag.attr('data-backdrop'), 'v')!,
+		retina: parseCacheBusterURL(backdropTag.attr('data-backdrop2x'), 'v')!,
+		mobile: parseCacheBusterURL(backdropTag.attr('data-backdrop-mobile'), 'v')!
+	};
 };
 
 export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageData => {
@@ -149,11 +158,7 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 			url: imdbUrl,
 			id: (imdbUrlPathParts ? imdbUrlPathParts[1] : undefined)!
 		} : undefined,
-		backdrop: {
-			default: parseCacheBusterURL(backdropTag.attr('data-backdrop'), 'v')!,
-			retina: parseCacheBusterURL(backdropTag.attr('data-backdrop2x'), 'v')!,
-			mobile: parseCacheBusterURL(backdropTag.attr('data-backdrop-mobile'), 'v')!
-		},
+		backdrop: parsePageBackdropTag(backdropTag),
 		cast: cast,
 		crew: crew,
 		similarFilms,
@@ -791,11 +796,13 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 			}
 		}
 	}
+	const backdrop = $('#backdrop');
 	return {
 		items: items,
 		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
 		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
-		totalCount
+		totalCount,
+		backdrop: backdrop.index() !== -1 ? parsePageBackdropTag(backdrop) : null
 	};
 };
 
