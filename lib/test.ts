@@ -24,6 +24,17 @@ import * as letterboxd from './index';
 	console.log();
 	console.log();
 
+	console.log("Testing failure getFilmInfo");
+	try {
+		const result = await letterboxd.getFilmInfo({tmdbId:'2710'});
+		console.log(JSON.stringify(result, null, '\t'));
+	} catch(error) {
+		console.error(error);
+	}
+	console.log();
+	console.log();
+	console.log();
+
 	console.log("Testing getFriendsReviews");
 	try {
 		const result = await letterboxd.getFriendsReviews({username:'luisfinke', filmSlug:'legend'});

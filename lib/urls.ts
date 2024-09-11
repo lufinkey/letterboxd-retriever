@@ -116,7 +116,6 @@ export const followingActivityFeedAjaxURL = (options: {
     return url;
 };
 
-
 export const similarItemsURL = (options: FilmURLOptions) => {
 	let url = BASE_URL;
 	if('filmSlug' in options && options.filmSlug) {

@@ -13,7 +13,8 @@ import {
 	CastMember,
 	CrewMember,
 	RelatedFilmsList,
-	FilmsPage
+	FilmsPage,
+	ErrorPage
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -686,4 +687,19 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 		items.push(film);
 	}
 	return {items};
+};
+
+
+export const parseErrorPage = (pageData: cheerio.CheerioAPI | string): ErrorPage => {
+	let $: cheerio.CheerioAPI;
+	if(typeof(pageData) === 'string') {
+		$ = cheerio.load(pageData);
+	} else {
+		$ = pageData;
+	}
+	const bodyText = $('#content .body-text');
+	return {
+		title: bodyText.find('.title').text(),
+		description: bodyText.find('p.text').text()
+	};
 };
