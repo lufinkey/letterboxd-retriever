@@ -39,7 +39,11 @@ export const getFilmInfo = async (options: GetFilmOptions): Promise<FilmInfo> =>
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const resData = await res.text();
 	const $ = cheerio.load(resData);
@@ -56,7 +60,7 @@ export const getFilmInfo = async (options: GetFilmOptions): Promise<FilmInfo> =>
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && ((pageData?.relatedFilms?.items?.length ?? 0) > 0 || (pageData?.similarFilms?.items?.length ?? 0) > 0)) {
 		const itemsToFetch = (pageData.relatedFilms?.items ?? []).concat(pageData.similarFilms?.items ?? []);
-		await fetchFilmPostersForItems(itemsToFetch, (film) => film, {posterSize:options.relatedFilmsPosterSize});
+		await fetchFilmPostersForItems(itemsToFetch, (item, callback) => callback(item), {posterSize:options.relatedFilmsPosterSize});
 	}
 	return {
 		pageData,
@@ -80,7 +84,11 @@ export const getFilmHrefFromExternalID = async (options: GetFilmFromExternalIDOp
 	});
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const filmHref = lburls.hrefFromURL(res.url);
 	let cmpHref = filmHref;
@@ -119,7 +127,11 @@ export const getFriendsReviews = async (options: GetFriendsReviewsOptions): Prom
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const resData = await res.text();
 	return lbparse.parseViewingListPage(resData);
@@ -139,7 +151,11 @@ export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const resData = await res.text();
 	return lbparse.parseFilmPosterPage(resData);
@@ -147,18 +163,20 @@ export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film
 
 export const fetchFilmPostersForItems = async <TItem>(
 	items: TItem[],
-	filmFromItem: ((item: TItem) => Film | undefined),
+	forEachFilm: ((item: TItem, callback: (film: Film) => Promise<void>) => Promise<void>),
 	options: {posterSize?: PosterSize}): Promise<void> => {
 	// fetch film posters for all the items
 	const posterPromises: {[href: string]: Promise<Film>} = {};
 	await Promise.all(items.map(async (item) => {
 		// ensure item has a film
-		const film = filmFromItem(item);
-		if(!film) {
-			return;
-		}
-		const filmHref = film?.href;
-		if(filmHref) {
+		await forEachFilm(item, async (film) => {
+			if(!film) {
+				return;
+			}
+			const filmHref = film?.href;
+			if(!filmHref) {
+				return;
+			}
 			// fetch the poster or wait for task already in progress
 			let promise = posterPromises[filmHref];
 			if(!promise) {
@@ -180,7 +198,7 @@ export const fetchFilmPostersForItems = async <TItem>(
 			} catch(error) {
 				console.warn(error);
 			}
-		}
+		});
 	}));
 };
 
@@ -200,7 +218,11 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	if(!csrf) {
 		const res = await fetch(feedPageURL);
 		if(!res.ok) {
-			throw letterboxdHttpError(res.status, res.statusText);
+			throw letterboxdHttpError({
+				url: feedPageURL,
+				statusCode: res.status,
+				message: res.statusText
+			});
 		}
 		const resData = await res.text();
 		csrf = lbparse.parseCSRF(resData);
@@ -222,14 +244,25 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	});
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url: feedAjaxURL,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const resData = await res.text();
 	//console.log(resData);
 	const result = lbparse.parseAjaxActivityFeed(resData);
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (result.items?.length ?? 0) > 0) {
-		await fetchFilmPostersForItems(result.items, (item) => item?.film, {posterSize:options.posterSize});
+		await fetchFilmPostersForItems(result.items, async (item, callback) => {
+			if(item.filmList?.films) {
+				await Promise.all(item.filmList.films.map(callback));
+			}
+			if(item.film) {
+				await callback(item.film);
+			}
+		}, {posterSize:options.posterSize});
 	}
 	return {
 		...result,
@@ -247,13 +280,17 @@ export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const resData = await res.text();
 	const page = lbparse.parseFilmListPage(resData);
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
-		await fetchFilmPostersForItems(page.items, (item) => item.film, {posterSize:options.posterSize});
+		await fetchFilmPostersForItems(page.items, (item, callback) => callback(item.film), {posterSize:options.posterSize});
 	}
 	return page;
 };
@@ -269,13 +306,17 @@ export const getSimilar = async (options: GetSimilarFilmsOptions): Promise<Films
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError(res.status, res.statusText);
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
 	}
 	const resData = await res.text();
 	const page = lbparse.parseFilmsPage(resData);
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
-		await fetchFilmPostersForItems(page.items, (film) => film, {posterSize:options.posterSize});
+		await fetchFilmPostersForItems(page.items, (item, callback) => callback(item), {posterSize:options.posterSize});
 	}
 	return page;
 };

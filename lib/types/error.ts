@@ -5,14 +5,16 @@ export type ErrorCode = ErrorCode_Http | ErrorCode_ErrorPage;
 
 export type LetterboxdError = Error & {
 	code?: ErrorCode;
+	url?: string;
 	statusCode?: number;
 	description?: string;
 };
 
-export const letterboxdHttpError = (statusCode: number, message: string) => {
-	const lbError: LetterboxdError = new Error(message);
-	lbError.code = `LETTERBOXD:HTTP${statusCode}`;
-	lbError.statusCode = statusCode;
+export const letterboxdHttpError = (options: {url: string, statusCode: number, message: string}) => {
+	const lbError: LetterboxdError = new Error(options.message);
+	lbError.code = `LETTERBOXD:HTTP${options.statusCode}`;
+	lbError.url = options.url;
+	lbError.statusCode = options.statusCode;
 	return lbError;
 };
 

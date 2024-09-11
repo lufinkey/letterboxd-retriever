@@ -28,6 +28,14 @@ export type Film = {
 	imageURL?: string | undefined;
 };
 
+export type FilmList = {
+	id?: string;
+	href: string;
+	name: string;
+	films: Film[];
+	totalCount?: number;
+};
+
 export type PosterSize = {
 	width: number;
 	height: number;

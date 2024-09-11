@@ -2,7 +2,8 @@
 import {
 	User,
 	Viewing,
-	Film
+	Film,
+	FilmList
 } from './common';
 
 export enum ActivityActionType {
@@ -11,7 +12,8 @@ export enum ActivityActionType {
 	Liked = 'liked',
 	Rated = 'rated',
 	LikedReview = 'liked-review',
-	AddedToWatchlist = 'added-to-watchlist'
+	AddedToWatchlist = 'added-to-watchlist',
+	Listed = 'listed'
 }
 
 export type ActivityFeedEntry = {
@@ -20,6 +22,8 @@ export type ActivityFeedEntry = {
 	actions: ActivityActionType[];
 	viewing?: Viewing | undefined;
 	film?: Film | undefined;
+	filmList?: FilmList | undefined;
+	actionDate?: string | undefined;
 	time: Date;
 }
 

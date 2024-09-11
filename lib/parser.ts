@@ -5,6 +5,7 @@ import { Element } from 'domhandler';
 import {
 	Film,
 	Viewing,
+	FilmList,
 	FilmPageData,
 	ActivityActionType,
 	ActivityFeedEntry,
@@ -335,17 +336,30 @@ export const parseFilmPosterPage = (pageData: string): Film => {
 
 export const parseFilmPosterContainer = (element: cheerio.Cheerio<any>): Film => {
 	const posterTag = element.find('.film-poster');
+	return parseFilmPosterElement(posterTag);
+};
+
+export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film => {
 	const imgTag = posterTag.find('img');
-	const href = posterTag.attr('data-film-link') ?? posterTag.attr('data-target-link');
+	let href = posterTag.attr('data-film-link') ?? posterTag.attr('data-target-link');
+	if(href == '/') {
+		href = undefined;
+	}
 	let type = posterTag.attr('data-type');
 	let slug = posterTag.attr('data-film-slug');
-	if(!type || !slug) {
-		const hrefParts = href ? trimString(href, '/').split('/') : [];
-		if(!type) {
-			type = hrefParts[0];
+	if(href) {
+		if(!type || !slug) {
+			const hrefParts = href ? trimString(href, '/').split('/') : [];
+			if(!type) {
+				type = hrefParts[0];
+			}
+			if(!slug) {
+				slug = hrefParts[1];
+			}
 		}
-		if(!slug) {
-			slug = hrefParts[1];
+	} else {
+		if (type && slug) {
+			href = `/${type}/${slug}/`;
 		}
 	}
 	return {
@@ -435,8 +449,10 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			let actionTypes: ActivityActionType[];
 			let film: Film | undefined = undefined;
 			let viewing: Viewing | undefined = undefined;
+			let filmList: FilmList | undefined = undefined;
 			const activityDescr = node$.find('.table-activity-description');
 			const activityViewing = node$.find('.table-activity-viewing');
+			const listSection = node$.find('section.list');
 			if(activityDescr.index() !== -1) {
 				// activity entry is a description
 				const userLink = activityDescr.find('.activity-summary > a.name');
@@ -640,6 +656,45 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					slug: filmSlug ?? filmSlugFromViewing,
 					year: filmYear
 				};
+			} else if(listSection.index() != -1) {
+				// film list
+				const objectLink = node$.find('.activity-summary a.target');
+				const actionText = objectLink[0]?.previousSibling ? $(objectLink[0].previousSibling).text().trim().toLowerCase() : undefined;
+				const filmCountStr = node$.find('.activity-summary small.value').text();
+				let totalFilmCount: number | undefined = undefined;
+				if(filmCountStr) {
+					let startIndex = 0;
+					while(startIndex < filmCountStr.length && !'0123456789'.includes(filmCountStr[startIndex])) {
+						startIndex++;
+					}
+					if(startIndex < filmCountStr.length) {
+						let endIndex = startIndex+1;
+						while(endIndex < filmCountStr.length && '0123456789'.includes(filmCountStr[endIndex])) {
+							endIndex++;
+						}
+						const countStr = filmCountStr.substring(startIndex, endIndex);
+						totalFilmCount = Number.parseInt(countStr);
+						if(Number.isNaN(countStr)) {
+							totalFilmCount = undefined;
+						}
+					}
+				}
+				const films: Film[] = [];
+				for(const filmElement of listSection.find('ul.poster-list > li')) {
+					const film = parseFilmPosterElement($(filmElement));
+					if(!film.id && !film.name && !film.href && !film.slug && !film.year) {
+						break;
+					}
+					films.push(film);
+				}
+				actionTypes = [actionText as ActivityActionType];
+				filmList = {
+					id: listSection.attr('data-film-list-id'),
+					href: listSection.find('a.list-link').attr('href')!,
+					name: objectLink.text(),
+					films: films,
+					totalCount: totalFilmCount
+				};
 			} else {
 				console.warn(`Unknown feed item at index ${entryIndex}`);
 				// TODO handle other types of feed items
@@ -659,6 +714,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				},
 				actions: actionTypes!,
 				film: film,
+				filmList: filmList,
 				viewing: viewing,
 				time: time!
 			});
