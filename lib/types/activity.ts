@@ -23,7 +23,6 @@ export type ActivityFeedEntry = {
 	viewing?: Viewing | undefined;
 	film?: Film | undefined;
 	filmList?: FilmList | undefined;
-	actionDate?: string | undefined;
 	time: Date;
 }
 
