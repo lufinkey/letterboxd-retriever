@@ -95,6 +95,17 @@ import * as letterboxd from './index';
 		console.error(error);
 	}
 
+	console.log("Testing getFilmListPage");
+	try {
+		const result = await letterboxd.getFilmListPage({href:'/darrencb/list/letterboxds-top-250-horror-films'});
+		console.log(JSON.stringify(result, null, '\t'));
+	} catch(error) {
+		console.error(error);
+	}
+	console.log();
+	console.log();
+	console.log();
+
 	console.log("Testing getSimilar");
 	try {
 		const result = await letterboxd.getSimilar({href:'/film/deadpool-wolverine'});

@@ -243,7 +243,7 @@ export type GetFilmListPageOptions = {href: string} & {
 };
 
 export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<FilmListPage> => {
-	const url = lburls.similarItemsURL(options);
+	const url = lburls.urlFromHref(options.href);
 	const res = await fetch(url);
 	if(!res.ok) {
 		res.body?.cancel();
