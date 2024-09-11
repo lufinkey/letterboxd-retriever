@@ -8,7 +8,8 @@ import {
 	PosterSize,
 	FilmsPage,
 	letterboxdHttpError,
-	letterboxdPageError
+	letterboxdPageError,
+	FilmListPage
 } from './types';
 import * as lburls from './urls';
 import * as lbparse from './parser';
@@ -234,6 +235,27 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 		...result,
 		csrf: csrf
 	};
+};
+
+export type GetFilmListPageOptions = {href: string} & {
+	includeAjaxContent?: boolean,
+	posterSize?: {width: number, height: number}
+};
+
+export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<FilmListPage> => {
+	const url = lburls.similarItemsURL(options);
+	const res = await fetch(url);
+	if(!res.ok) {
+		res.body?.cancel();
+		throw letterboxdHttpError(res.status, res.statusText);
+	}
+	const resData = await res.text();
+	const page = lbparse.parseFilmListPage(resData);
+	// fetch ajax content if needed
+	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
+		await fetchFilmPostersForItems(page.items, (item) => item.film, {posterSize:options.posterSize});
+	}
+	return page;
 };
 
 

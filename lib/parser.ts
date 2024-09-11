@@ -14,7 +14,9 @@ import {
 	CrewMember,
 	RelatedFilmsList,
 	FilmsPage,
-	ErrorPage
+	ErrorPage,
+	FilmListItem,
+	FilmListPage
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -687,6 +689,41 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 		items.push(film);
 	}
 	return {items};
+};
+
+export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmListPage => {
+	let $: cheerio.CheerioAPI;
+	if(typeof(pageData) === 'string') {
+		$ = cheerio.load(pageData);
+	} else {
+		$ = pageData;
+	}
+	const items: FilmListItem[] = [];
+	const filmGridItems = $('ul.poster-list.film-list > li');
+	for(const element of filmGridItems) {
+		const elementTag = $(element);
+		const film = parseFilmPosterContainer(elementTag);
+		// parse entry id
+		const objectId = elementTag.attr('data-object-id');
+		const objectIdParts = objectId?.split(':');
+		const id = objectIdParts ? objectIdParts[1] : undefined;
+		// parse owner rating
+		const ownerRatingStr = elementTag.attr('data-owner-rating');
+		let ownerRating: number | string | undefined = ownerRatingStr != null ? Number.parseInt(ownerRatingStr) : undefined;
+		if(ownerRating == null) {
+			ownerRating = ownerRatingStr;
+		}
+		items.push({
+			id: (id ?? objectId)!,
+			ownerRating: ownerRating as number,
+			film: film
+		});
+	}
+	return {
+		items: items,
+		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
+		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
+	};
 };
 
 
