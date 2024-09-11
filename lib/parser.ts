@@ -698,6 +698,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 	} else {
 		$ = pageData;
 	}
+	const pageType = $('head meta[property="og:type"]').attr('content');
 	const items: FilmListItem[] = [];
 	const filmGridItems = $('ul.poster-list.film-list > li');
 	for(const element of filmGridItems) {
@@ -719,10 +720,26 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 			film: film
 		});
 	}
+	let totalCount: number | undefined = undefined;
+	if(pageType == 'letterboxd:list') {
+		const pageDescr = $('head meta[name="description"]').attr('content');
+		const prefix = 'A list of ';
+		if(pageDescr?.startsWith(prefix)) {
+			let nextWhitespaceIndex = pageDescr.indexOf(' ', prefix.length);
+			if(nextWhitespaceIndex == -1) {
+				nextWhitespaceIndex = pageDescr.length;
+			}
+			totalCount = Number.parseInt(pageDescr.substring(prefix.length, nextWhitespaceIndex));
+			if(Number.isNaN(totalCount)) {
+				totalCount = undefined;
+			}
+		}
+	}
 	return {
 		items: items,
 		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
 		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
+		totalCount
 	};
 };
 
