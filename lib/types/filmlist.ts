@@ -19,5 +19,7 @@ export type FilmListPage = {
 	prevPageHref: string | null;
 	nextPageHref: string | null;
 	totalCount?: number | undefined;
-	backdrop?: PageBackdrop | null
+	backdrop?: PageBackdrop | null;
+	publishedAt: Date;
+	updatedAt?: Date | undefined;
 };

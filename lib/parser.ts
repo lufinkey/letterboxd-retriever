@@ -797,12 +797,17 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 		}
 	}
 	const backdrop = $('#backdrop');
+	const contentNav = $('#content-nav');
+	const publishedAt = contentNav.find('.published time').attr('datetime');
+	const updatedAt = contentNav.find('.updated time').attr('datetime');
 	return {
 		items: items,
 		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
 		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
 		totalCount,
-		backdrop: backdrop.index() !== -1 ? parsePageBackdropTag(backdrop) : null
+		backdrop: backdrop.index() !== -1 ? parsePageBackdropTag(backdrop) : null,
+		publishedAt: (publishedAt ? new Date(publishedAt) : undefined)!,
+		updatedAt: (updatedAt ? new Date(updatedAt) : undefined)!
 	};
 };
 
