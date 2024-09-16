@@ -765,6 +765,15 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 	for(const element of filmGridItems) {
 		const elementTag = $(element);
 		const film = parseFilmPosterContainer(elementTag);
+		// parse order number
+		const orderNumStr = elementTag.find('.list-number').text();
+		let orderNum: number | undefined = undefined;
+		if(orderNumStr != null && orderNumStr.length > 0) {
+			orderNum = Number.parseInt(orderNumStr);
+			if(Number.isNaN(orderNum)) {
+				orderNum = undefined;
+			}
+		}
 		// parse entry id
 		const objectId = elementTag.attr('data-object-id');
 		const objectIdParts = objectId?.split(':');
@@ -777,6 +786,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 		}
 		items.push({
 			id: (id ?? objectId)!,
+			order: orderNum!,
 			ownerRating: ownerRating as number,
 			film: film
 		});

@@ -10,6 +10,7 @@ export type FilmsPage = {
 
 export type FilmListItem = {
 	id: string;
+	order: number;
 	ownerRating: number;
 	film: Film;
 };
