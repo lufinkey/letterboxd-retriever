@@ -566,7 +566,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 									console.warn(`Review href ${reviewHref} didn't have expected structure`);
 								}
 								const reviewerSlug = reviewHrefParts[0];
-								const filmName = $(lastFromArray(objectLink[0].childNodes)).text();
+								const filmName = $(lastFromArray(objectLink[0].childNodes)).text().trim();
 								actionTypes = [ActivityActionType.LikedReview];
 								viewing = {
 									user: {
@@ -584,7 +584,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 									href: (filmSlug ? `/${filmType}/${filmSlug}/` : undefined)!
 								};
 							} else {
-								console.warn(`Unknown object type at index ${entryIndex}`);
+								console.warn(`Unknown object type ${objectLinkContext} at index ${entryIndex}`);
 							}
 						}
 						break;
