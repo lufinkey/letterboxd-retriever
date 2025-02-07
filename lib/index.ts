@@ -240,7 +240,7 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 		referrer: feedPageURL,
 		headers: {
 			'Host': lburls.HOST
-		} 
+		}
 	});
 	if(!res.ok) {
 		res.body?.cancel();

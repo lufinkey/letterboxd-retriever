@@ -367,6 +367,16 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 			href = `/${type}/${slug}/`;
 		}
 	}
+	let year = posterTag.attr('data-film-release-year');
+	if(!year) {
+		const fullFilmTitle = posterTag.find('span[title]').attr('title');
+		if(fullFilmTitle && fullFilmTitle.endsWith(')')) {
+			const parenthStart = fullFilmTitle.lastIndexOf('(');
+			if(parenthStart != -1) {
+				year = fullFilmTitle.substring(parenthStart+1, fullFilmTitle.length-1);
+			}
+		}
+	}
 	return {
 		id: posterTag.attr('data-film-id'),
 		type: type ?? 'film',
@@ -374,7 +384,7 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 		imageURL: parseCacheBusterURL(imgTag.attr('src'), 'v'),
 		slug: slug!,
 		name: (posterTag.attr('data-film-name') ?? imgTag.attr('alt'))!,
-		year: posterTag.attr('data-film-release-year')
+		year: year
 	};
 };
 
