@@ -13,7 +13,8 @@ export enum ActivityActionType {
 	Rated = 'rated',
 	LikedReview = 'liked-review',
 	AddedToWatchlist = 'added-to-watchlist',
-	Listed = 'listed'
+	Listed = 'listed',
+	LikedList = 'liked-list'
 }
 
 export type ActivityFeedEntry = {

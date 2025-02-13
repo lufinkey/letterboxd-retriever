@@ -32,7 +32,8 @@ export type FilmList = {
 	id?: string;
 	href: string;
 	name: string;
-	films: Film[];
+	films?: Film[];
+	owner: User;
 	totalCount?: number;
 };
 

@@ -447,6 +447,11 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			end = true;
 			break;
 		}
+		let userDisplayName: string | undefined;
+		let actionTypes: ActivityActionType[] | undefined;
+		let film: Film | undefined = undefined;
+		let viewing: Viewing | undefined = undefined;
+		let filmList: FilmList | undefined = undefined;
 		try {
 			// parse user info
 			const userHref = node$.find('.table-activity-user > a').attr('href');
@@ -459,23 +464,21 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			}
 			const userImageElement = node$.find(".table-activity-user");
 			const userImageSrc = userImageElement.attr('src');
-			let userDisplayName = userImageElement.attr('alt');
+			const userImageURL = parseCacheBusterURL(userImageSrc, 'v');
+			userDisplayName = userImageElement.attr('alt');
 			// parse activity entry
-			let actionTypes: ActivityActionType[];
-			let film: Film | undefined = undefined;
-			let viewing: Viewing | undefined = undefined;
-			let filmList: FilmList | undefined = undefined;
 			const activityDescr = node$.find('.table-activity-description');
 			const activityViewing = node$.find('.table-activity-viewing');
 			const listSection = node$.find('section.list');
 			if(activityDescr.index() !== -1) {
+				const activitySummary = activityDescr.find('.activity-summary');
 				// activity entry is a description
-				const userLink = activityDescr.find('.activity-summary > a.name');
+				const userLink = activitySummary.find('> a.name');
 				if(userLink.index() === -1) {
 					console.warn(`Missing user link on entry index ${entryIndex}`);
 				}
 				// check for multiple actions
-				const multiActionTextTag = activityDescr.find('.activity-summary .context:not(:has(.rating)):not(:has(.name))');
+				const multiActionTextTag = activitySummary.find('.context:not(:has(.rating)):not(:has(.name))');
 				const multiActionText = multiActionTextTag.index() !== -1 ? multiActionTextTag.text().trim() : null;
 				if(multiActionText) {
 					// handle multi-action
@@ -486,19 +489,19 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					// parse movie name
 					const filmName = multiActionTextTag[0]?.nextSibling ? $(multiActionTextTag[0].nextSibling).text().trim() : undefined;
 					// parse rating
-					const ratingTag = activityDescr.find('.activity-summary .rating');
+					const ratingTag = activitySummary.find('.rating');
 					let rating: number | undefined = undefined;
 					if(ratingTag.index() !== -1) {
 						const ratingStr = ratingTag.text().trim();
 						rating = parseRatingString(ratingStr);
 					}
 					// parse viewer
-					const viewerNameTag = activityDescr.find('.activity-summary a.name');
+					const viewerNameTag = activitySummary.find('a.name');
 					const viewerName = viewerNameTag.text().trim();
 					const viewerHref = viewerNameTag.attr('href');
 					const viewerSlug = viewerHref ? trimString(viewerHref, '/').split('/')[0] : undefined;
 					// parse viewing
-					const viewingHref = activityDescr.find('.activity-summary a.target').attr('href');
+					const viewingHref = activitySummary.find('a.target').attr('href');
 					const viewingHrefParts = viewingHref ? trimString(viewingHref, '/').split('/') : [];
 					const objType = viewingHrefParts[1];
 					const filmSlug = viewingHrefParts[2];
@@ -520,7 +523,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					};
 				} else {
 					// handle single action
-					const objectLink = activityDescr.find('.activity-summary > a:nth-of-type(2)');
+					const objectLink = activitySummary.find('> a:nth-of-type(2)');
 					const userLinkText = userLink.text().trim();
 					if(userLinkText) {
 						userDisplayName = userLinkText;
@@ -532,7 +535,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								console.warn(`Missing object link on entry index ${entryIndex}`);
 							}
 							const afterObjectText = objectLink[0]?.nextSibling ? $(objectLink[0].nextSibling).text().trim().toLowerCase() : undefined;
-							const object2Link = activityDescr.find('.activity-summary > a:nth-of-type(3)');
+							const object2Link = activitySummary.find('> a:nth-of-type(3)');
 							const object2Text = object2Link.text().trim().toLowerCase();
 							if(afterObjectText == 'to' && object2Text.endsWith(' watchlist')) {
 								// added to watchlist
@@ -545,7 +548,9 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 									slug: filmHrefParts[1]!,
 									name: objectLink.text()
 								};
+								break;
 							}
+							console.warn(`Unknown object actions \"${afterObjectText}\" \"${object2Text}\" at index ${entryIndex}`);
 						}
 						break;
 
@@ -553,12 +558,12 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 							if(objectLink.index() === -1) {
 								console.warn(`Missing object link on entry index ${entryIndex}`);
 							}
-							const objectLinkContext = objectLink.find('.context')[0].childNodes
+							const objectLinkContext = objectLink.find('.context')[0]?.childNodes
 								.map((n) => (n.type == 'text' ? $(n).text().trim() : undefined))
 								.find((t) => t != null && t.length > 0)?.toLowerCase();
 							if(objectLinkContext == 'review of') {
 								// liked review
-								let reviewerName = activityDescr.find('.activity-summary > strong.name').text();
+								let reviewerName = activitySummary.find('> strong.name').text();
 								if(reviewerName.endsWith(POSESSIVE_TEXT_SUFFIX1)) {
 									reviewerName = reviewerName.substring(0, reviewerName.length - POSESSIVE_TEXT_SUFFIX1.length);
 								}
@@ -573,7 +578,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 								const filmType = reviewHrefParts[1];
 								const filmSlug = reviewHrefParts[2];
 								if(!filmSlug) {
-									console.warn(`Review href ${reviewHref} didn't have expected structure`);
+									console.warn(`Review href ${reviewHref} didn't have expected structure for entry ${entryIndex}`);
 								}
 								const reviewerSlug = reviewHrefParts[0];
 								const filmName = $(lastFromArray(objectLink[0].childNodes)).text().trim();
@@ -593,9 +598,40 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 									slug: filmSlug,
 									href: (filmSlug ? `/${filmType}/${filmSlug}/` : undefined)!
 								};
+								break;
 							} else {
-								console.warn(`Unknown object type ${objectLinkContext} at index ${entryIndex}`);
+								const activitySummaryObj = activitySummary[0];
+								const lastChildNode = (activitySummaryObj?.childNodes.length ?? 0) > 0 ? activitySummaryObj.childNodes[activitySummaryObj.childNodes.length-1] : undefined;
+								if(lastChildNode?.nodeType == 3) { // check if node is child node
+									const lastChildNodeText = $(lastChildNode).text()?.trim();
+									if(lastChildNodeText === 'list') {
+										// liked list
+										const ownerName = activitySummary.find('> strong.name').text();
+										const listHref = objectLink.attr('href')!
+										let ownerHref: string;
+										let ownerUsername: string;
+										if(listHref && listHref.startsWith('/')) {
+											const nextSlashIndex = listHref.indexOf('/', 1);
+											if(nextSlashIndex != -1 && nextSlashIndex != (listHref.length-1)) {
+												ownerUsername = listHref.substring(1, nextSlashIndex);
+												ownerHref = `/${ownerUsername}/`;
+											}
+										}
+										actionTypes = [ActivityActionType.LikedList];
+										filmList = {
+											href: listHref,
+											name: objectLink.text(),
+											owner: {
+												href: ownerHref!,
+												username: ownerUsername!,
+												displayName: ownerName!,
+											}
+										};
+										break;
+									}
+								}
 							}
+							console.warn(`Unknown object type ${objectLinkContext} at index ${entryIndex}`);
 						}
 						break;
 
@@ -673,9 +709,17 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				};
 			} else if(listSection.index() != -1) {
 				// film list
-				const objectLink = node$.find('.activity-summary a.target');
+				const activitySummary = node$.find('.activity-summary');
+				const ownerObj = activitySummary.find('a.name');
+				const ownerHref = ownerObj.attr('href');
+				const ownerUsername = ownerHref ? trimString(ownerHref, '/').split('/')[0] : undefined;
+				let ownerDisplayName = ownerObj.text();
+				if(ownerDisplayName && (ownerDisplayName.endsWith("’s") || ownerDisplayName.endsWith("'s"))) {
+					ownerDisplayName = ownerDisplayName.substring(0, ownerDisplayName.length-2);
+				}
+				const objectLink = activitySummary.find('a.target');
 				const actionText = objectLink[0]?.previousSibling ? $(objectLink[0].previousSibling).text().trim().toLowerCase() : undefined;
-				const filmCountStr = node$.find('.activity-summary small.value').text();
+				const filmCountStr = activitySummary.find('small.value').text();
 				let totalFilmCount: number | undefined = undefined;
 				if(filmCountStr) {
 					let startIndex = 0;
@@ -708,6 +752,11 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					href: listSection.find('a.list-link').attr('href')!,
 					name: objectLink.text(),
 					films: films,
+					owner: {
+						href: ownerHref!,
+						username: ownerUsername!,
+						displayName: ownerDisplayName
+					},
 					totalCount: totalFilmCount
 				};
 			} else {
@@ -722,7 +771,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			feedItems.push({
 				id: id!,
 				user: {
-					imageURL: parseCacheBusterURL(userImageSrc, 'v'),
+					imageURL: userImageURL,
 					href: userHref!,
 					username: username!,
 					displayName: userDisplayName!
@@ -735,6 +784,13 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			});
 		} catch(error) {
 			console.error(`Failed to parse entry ${entryIndex}`);
+			/*console.error(JSON.stringify({
+				userDisplayName,
+				actionTypes,
+				film,
+				viewing,
+				filmList
+			}, null, '\t'));*/
 			console.error(error);
 		}
 		entryIndex++;
