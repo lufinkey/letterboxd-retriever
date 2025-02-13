@@ -81,16 +81,19 @@ import * as letterboxd from './index';
 
 	console.log("Testing getUserFollowingFeed");
 	try {
-		const result = await letterboxd.getUserFollowingFeed('luisfinke');
+		let result = await letterboxd.getUserFollowingFeed('luisfinke');
 		console.log(JSON.stringify(result, null, '\t'));
-		if(!result.end) {
-			console.log("\nPage 2:");
-			const result2 = await letterboxd.getUserFollowingFeed('luisfinke', {
-				after: result.items[result.items.length-1].id,
+		/*let pageNum = 2;
+		while(!result.end) {
+			let nextPageToken: string | null = result.items[result.items.length-1].id
+			console.log(`\nPage ${pageNum}:`);
+			result = await letterboxd.getUserFollowingFeed('luisfinke', {
+				after: nextPageToken,
 				csrf: result.csrf
 			});
-			console.log(JSON.stringify(result2, null, '\t'));
-		}
+			console.log(JSON.stringify(result, null, '\t'));
+			pageNum++;
+		}*/
 	} catch(error) {
 		console.error(error);
 	}
@@ -118,7 +121,7 @@ import * as letterboxd from './index';
 	console.log();
 
 	// wait
-	/*await new Promise((resolve, reject) => {
+	await new Promise((resolve, reject) => {
 		setTimeout(resolve, 8000);
-	});*/
+	});
 })();
