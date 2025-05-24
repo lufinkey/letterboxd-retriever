@@ -390,12 +390,23 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 
 export const parseViewingListPage = (pageData: string): ReviewsPage => {
 	const $ = cheerio.load(pageData);
+	// find viewing list
+	const viewingList = $('.viewing-list');
+	if(viewingList.index() == -1) {
+		// no viewing list, so make sure there is a "no reviews" block
+		const uiBlockHeading = $('.ui-block-heading').text();
+		if(!uiBlockHeading || !uiBlockHeading.toLowerCase().startsWith("no ")) {
+			console.log("No viewing list element found");
+		}
+	}
+	// parse viewing list items
 	let viewings: Viewing[] = [];
-	for(const viewingElement of $('.viewing-list > .listitem')) {
+	for(const viewingElement of viewingList.find('> .listitem')) {
 		const viewing = parseViewingListElement($(viewingElement), $);
 		viewings.push(viewing);
 	}
-	const nextPageURL = $('.viewing-list .pagination .paginate-nextprev a.next').attr('href');
+	// get next page url
+	const nextPageURL = viewingList.find('.pagination .paginate-nextprev a.next').attr('href');
 	let nextPage: {href: string, page: number} | null;
 	if(nextPageURL) {
 		const pageParts = trimString(nextPageURL, '/').split('/');
@@ -407,6 +418,7 @@ export const parseViewingListPage = (pageData: string): ReviewsPage => {
 	} else {
 		nextPage = null;
 	}
+	// return data
 	return {
 		items: viewings,
 		nextPage: nextPage
