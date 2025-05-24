@@ -2,8 +2,10 @@
 import * as letterboxd from './index';
 import * as lburls from './urls';
 
-const testsToRun = process.argv.slice(2).map((testName) => testName.toLowerCase());
+let testsToRun = process.argv.slice(2);
 console.log(`tests to run = ${JSON.stringify(testsToRun)}`);
+console.log();
+testsToRun = testsToRun.map((testName) => testName.toLowerCase());
 
 const tests: {[key:string]: any} = {
 	async testGetFilmInfoWithTmdbID() {
