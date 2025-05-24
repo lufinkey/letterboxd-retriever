@@ -432,8 +432,10 @@ export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: 
 	const bodyTextTag = reviewTag.find('.body .body-text');
 	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
 	const timestamp = reviewTag.find('time').attr("datetime");
+	const viewingId = reviewTag.attr('data-viewing-id')
+		?? reviewTag.find('*[data-likeable-uid]').attr('data-likeable-uid')?.split(':')[1];
 	return {
-		id: reviewTag.attr('data-viewing-id'),
+		id: viewingId,
 		user: {
 			imageURL: parseCacheBusterURL(avatarTag.find('img').attr('src'), 'v'),
 			href: avatarTag.attr('href')!,
@@ -668,6 +670,8 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			}
 			else if(activityViewing.index() !== -1) {
 				// viewing
+				const articleTag = activityViewing.find('> article');
+				const viewingId = articleTag.attr('data-object-id')?.split(':')[1];
 				const filmPosterTag = activityViewing.find('.film-poster');
 				const filmId = filmPosterTag.attr('data-film-id');
 				const filmSlug = filmPosterTag.attr('data-film-slug');
@@ -714,6 +718,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				const isWatched = actionTypes.indexOf(ActivityActionType.Watched) != -1;
 				const isRewatched = actionTypes.indexOf(ActivityActionType.Rewatched) != -1;
 				viewing = {
+					id: viewingId,
 					user: {
 						imageURL: parseCacheBusterURL(userImageSrc, 'v'),
 						href: viewerHref!,
