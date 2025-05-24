@@ -203,8 +203,8 @@ export const fetchFilmPostersForItems = async <TItem>(
 };
 
 export type GetUserFollowingFeedOptions = {
-	after?: number | string | undefined,
-	csrf?: string | undefined,
+	after?: number | string | null | undefined,
+	csrf?: string | null | undefined,
 	includeAjaxContent?: boolean,
 	posterSize?: {width: number, height: number}
 };

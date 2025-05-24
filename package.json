@@ -9,7 +9,7 @@
 		"url": "https://github.com/lufinkey/letterboxd-retriever.git"
 	},
 	"scripts": {
-		"test": "npm run build && node dist/lib/test.js",
+		"test": "npm run build && node dist/lib/test.js --",
 		"build": "npx tsc",
 		"lint": "eslint . --ext .ts",
 		"prepare": "npm run build"
