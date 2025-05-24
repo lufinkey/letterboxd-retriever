@@ -73,7 +73,9 @@ const tests: {[key:string]: any} = {
 	},
 
 	async testGetSimilar() {
-		return await letterboxd.getSimilar({href:'/film/deadpool-wolverine'});
+		const opts: letterboxd.GetSimilarFilmsOptions = {href:'/film/deadpool-wolverine'};
+		console.log(`\t${lburls.similarItemsURL(opts)}`);
+		return await letterboxd.getSimilar(opts);
 	}
 };
 

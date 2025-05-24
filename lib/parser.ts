@@ -822,7 +822,7 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 		$ = pageData;
 	}
 	const items: Film[] = [];
-	const filmGridItems = $('ul.poster-list.film-list > li');
+	const filmGridItems = $('ul.poster-list > li');
 	for(const element of filmGridItems) {
 		const film = parseFilmPosterContainer($(element));
 		items.push(film);
