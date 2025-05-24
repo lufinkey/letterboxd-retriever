@@ -2,7 +2,8 @@
 import * as letterboxd from './index';
 import * as lburls from './urls';
 
-const testsToRun = process.argv.slice(1).map((testName) => testName.toLowerCase());
+const testsToRun = process.argv.slice(2).map((testName) => testName.toLowerCase());
+console.log(`tests to run = ${JSON.stringify(testsToRun)}`);
 
 const tests: {[key:string]: any} = {
 	async testGetFilmInfoWithTmdbID() {
@@ -47,14 +48,14 @@ const tests: {[key:string]: any} = {
 		if(!this.userFollowingLastPage) {
 			// first page
 			this.userFollowingLastPage = await letterboxd.getUserFollowingFeed('luisfinke');
-			return this.userFollowingLastPage;
+		} else {
+			// next page
+			const nextPageToken: (string | null) = this.userFollowingLastPage.items[this.userFollowingLastPage.items.length-1].id;
+			this.userFollowingLastPage = await letterboxd.getUserFollowingFeed('luisfinke', {
+				after: nextPageToken,
+				csrf: this.userFollowingLastPage.csrf
+			});
 		}
-		// next page
-		const nextPageToken: (string | null) = this.userFollowingLastPage.items[this.userFollowingLastPage.items.length-1].id;
-		this.userFollowingLastPage = await letterboxd.getUserFollowingFeed('luisfinke', {
-			after: nextPageToken,
-			csrf: this.userFollowingLastPage.csrf
-		});
 		this.userFollowingPageNum += 1;
 		return this.userFollowingLastPage;
 	},
