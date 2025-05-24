@@ -68,6 +68,10 @@ const tests: {[key:string]: any} = {
 		return await letterboxd.getFilmListPage({href:'/darrencb/list/letterboxds-top-250-horror-films'});
 	},
 
+	async testGetFilmListDetailPage() {
+		return await letterboxd.getFilmListPage({href:'/darrencb/list/letterboxds-top-250-horror-films/detail'});
+	},
+
 	async testGetSimilar() {
 		return await letterboxd.getSimilar({href:'/film/deadpool-wolverine'});
 	}

@@ -838,36 +838,73 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 		$ = pageData;
 	}
 	const pageType = $('head meta[property="og:type"]').attr('content');
+	const posterList = $('ul.poster-list');
+	const viewingList = $('.viewing-list');
 	const items: FilmListItem[] = [];
-	const filmGridItems = $('ul.poster-list.film-list > li');
-	for(const element of filmGridItems) {
-		const elementTag = $(element);
-		const film = parseFilmPosterContainer(elementTag);
-		// parse order number
-		const orderNumStr = elementTag.find('.list-number').text();
-		let orderNum: number | undefined = undefined;
-		if(orderNumStr != null && orderNumStr.length > 0) {
-			orderNum = Number.parseInt(orderNumStr);
-			if(Number.isNaN(orderNum)) {
-				orderNum = undefined;
+	if(posterList.index() != -1) {
+		for(const element of posterList.find('> li')) {
+			const elementTag = $(element);
+			const film = parseFilmPosterContainer(elementTag);
+			// parse order number
+			const orderNumStr = elementTag.find('.list-number').text();
+			let orderNum: number | undefined = undefined;
+			if(orderNumStr != null && orderNumStr.length > 0) {
+				orderNum = Number.parseInt(orderNumStr);
+				if(Number.isNaN(orderNum)) {
+					orderNum = undefined;
+				}
 			}
+			// parse entry id
+			const objectId = elementTag.attr('data-object-id');
+			const objectIdParts = objectId?.split(':');
+			const id = objectIdParts ? objectIdParts[1] : undefined;
+			// parse owner rating
+			const ownerRatingStr = elementTag.attr('data-owner-rating');
+			let ownerRating: number | string | undefined = ownerRatingStr != null ? Number.parseInt(ownerRatingStr) : undefined;
+			if(ownerRating == null) {
+				ownerRating = ownerRatingStr;
+			}
+			items.push({
+				id: (id ?? objectId)!,
+				order: orderNum!,
+				ownerRating: ownerRating as number,
+				film: film
+			});
 		}
-		// parse entry id
-		const objectId = elementTag.attr('data-object-id');
-		const objectIdParts = objectId?.split(':');
-		const id = objectIdParts ? objectIdParts[1] : undefined;
-		// parse owner rating
-		const ownerRatingStr = elementTag.attr('data-owner-rating');
-		let ownerRating: number | string | undefined = ownerRatingStr != null ? Number.parseInt(ownerRatingStr) : undefined;
-		if(ownerRating == null) {
-			ownerRating = ownerRatingStr;
+	} else if(viewingList.index() != -1) {
+		for(const element of viewingList.find('> .listitem')) {
+			const elementTag = $(element);
+			const film = parseFilmPosterContainer(elementTag);
+			// parse order number
+			let orderNumStr = elementTag.find('.list-number').text();
+			if(orderNumStr.endsWith('.')) {
+				orderNumStr = orderNumStr.substring(0, orderNumStr.length-1);
+			}
+			let orderNum: number | undefined = undefined;
+			if(orderNumStr != null && orderNumStr.length > 0) {
+				orderNum = Number.parseInt(orderNumStr);
+				if(Number.isNaN(orderNum)) {
+					console.error(`Failed to parse order number`);
+					orderNum = undefined;
+				}
+			}
+			// parse entry id
+			const articleTag = elementTag.find('> article');
+			const objectId = articleTag.attr('data-object-id');
+			const objectIdParts = objectId?.split(':');
+			const id = objectIdParts?.[1];
+			// parse owner rating
+			const ratingStr = elementTag.find('.rating').text()?.trim();
+			const rating = parseRatingString(ratingStr);
+			items.push({
+				id: (id ?? objectId)!,
+				order: orderNum!,
+				ownerRating: rating as number,
+				film: film
+			});
 		}
-		items.push({
-			id: (id ?? objectId)!,
-			order: orderNum!,
-			ownerRating: ownerRating as number,
-			film: film
-		});
+	} else {
+		console.error("No film or viewing list found");
 	}
 	let totalCount: number | undefined = undefined;
 	if(pageType == 'letterboxd:list') {
