@@ -428,22 +428,30 @@ export const parseViewingListPage = (pageData: string): ReviewsPage => {
 export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): Viewing => {
 	const avatarTag = reviewTag.find('a.avatar');
 	const contextTag = reviewTag.find('.body a.context');
+	const contextText = contextTag.text()?.toLowerCase();
 	const bodyTextTag = reviewTag.find('.body .body-text');
 	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
+	const timestamp = reviewTag.find('time').attr("datetime");
 	return {
 		id: reviewTag.attr('data-viewing-id'),
 		user: {
 			imageURL: parseCacheBusterURL(avatarTag.find('img').attr('src'), 'v'),
 			href: avatarTag.attr('href')!,
 			username: reviewTag.attr('data-person')!,
-			displayName: contextTag.find('.name').text()!
+			displayName: contextTag.find('.displayname').text()!
 		},
 		href: contextTag.attr('href')!,
 		rating: parseRatingString(reviewTag.find('.rating').text()),
 		liked: reviewTag.find('.icon-liked').index() !== -1,
 		text: (collapsedTextTag.index() != -1 ? collapsedTextTag.find('> p') : bodyTextTag.find('> p')).toArray().map((p) => $(p).text()).join("\n"),
 		fullTextHref: bodyTextTag.attr('data-full-text-url'),
-		hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined
+		hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined,
+		date: timestamp!,
+		isRewatch: (contextText != null ?
+			(contextText.startsWith('rewatched ') ? true
+			: contextText.startsWith('watched ') ? false
+			: undefined)
+			: undefined)
 	};
 };
 
@@ -464,6 +472,7 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 		let film: Film | undefined = undefined;
 		let viewing: Viewing | undefined = undefined;
 		let filmList: FilmList | undefined = undefined;
+		const timestamp = node$.find('time').attr('datetime');
 		try {
 			// parse user info
 			const userHref = node$.find('.table-activity-user > a').attr('href');
@@ -517,6 +526,8 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					const viewingHrefParts = viewingHref ? trimString(viewingHref, '/').split('/') : [];
 					const objType = viewingHrefParts[1];
 					const filmSlug = viewingHrefParts[2];
+					const isWatched = actionTypes.indexOf(ActivityActionType.Watched) != -1;
+					const isRewatched = actionTypes.indexOf(ActivityActionType.Rewatched) != -1;
 					// create objects
 					viewing = {
 						user: {
@@ -525,7 +536,9 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 							displayName: viewerName!
 						},
 						href: viewingHref!,
-						rating: rating
+						rating: rating,
+						date: (isWatched || isRewatched) ? timestamp : undefined,
+						isRewatch: isRewatched ? true : isWatched ? false : undefined,
 					};
 					film = {
 						name: filmName!,
@@ -698,6 +711,8 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				const bodyTextTag = activityViewing.find('.body .body-text');
 				const actionTypeStr = $(lastFromArray(attributionTag[0].childNodes)).text()?.trim().toLowerCase();
 				actionTypes = [actionTypeStr as ActivityActionType];
+				const isWatched = actionTypes.indexOf(ActivityActionType.Watched) != -1;
+				const isRewatched = actionTypes.indexOf(ActivityActionType.Rewatched) != -1;
 				viewing = {
 					user: {
 						imageURL: parseCacheBusterURL(userImageSrc, 'v'),
@@ -709,7 +724,9 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					rating: rating,
 					liked: activityViewing.find('.icon-liked').index() !== -1,
 					text: bodyTextTag.find('> p').toArray().map((p) => $(p).text()).join("\n"),
-					fullTextHref: bodyTextTag.attr('data-full-text-url')
+					fullTextHref: bodyTextTag.attr('data-full-text-url'),
+					date: (isWatched || isRewatched) ? timestamp : undefined,
+					isRewatch: isRewatched ? true : isWatched ? false : undefined,
 				};
 				film = {
 					id: filmId,

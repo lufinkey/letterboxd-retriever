@@ -15,7 +15,9 @@ export type Viewing = {
 	text?: string;
 	fullTextHref?: string;
 	hasMoreText?: boolean;
-	// TODO add comments count, hasMore
+	date?: string;
+	isRewatch?: boolean;
+	// TODO add comments count, etc
 };
 
 export type Film = {
