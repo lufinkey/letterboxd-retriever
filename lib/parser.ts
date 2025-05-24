@@ -391,11 +391,11 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 export const parseViewingListPage = (pageData: string): ReviewsPage => {
 	const $ = cheerio.load(pageData);
 	let viewings: Viewing[] = [];
-	for(const viewingElement of $('.viewings-list > ul > li')) {
+	for(const viewingElement of $('.viewing-list > .listitem')) {
 		const viewing = parseViewingListElement($(viewingElement), $);
 		viewings.push(viewing);
 	}
-	const nextPageURL = $('.viewings-list .pagination .paginate-nextprev a.next').attr('href');
+	const nextPageURL = $('.viewing-list .pagination .paginate-nextprev a.next').attr('href');
 	let nextPage: {href: string, page: number} | null;
 	if(nextPageURL) {
 		const pageParts = trimString(nextPageURL, '/').split('/');
