@@ -415,8 +415,8 @@ export const parseViewingListPage = (pageData: string): ReviewsPage => {
 
 export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): Viewing => {
 	const avatarTag = reviewTag.find('a.avatar');
-	const contextTag = reviewTag.find('.film-detail-content a.context');
-	const bodyTextTag = reviewTag.find('.film-detail-content .body-text');
+	const contextTag = reviewTag.find('.body a.context');
+	const bodyTextTag = reviewTag.find('.body .body-text');
 	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
 	return {
 		id: reviewTag.attr('data-viewing-id'),
@@ -657,24 +657,24 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 						}
 					}
 				}*/
-				const filmReviewLink = activityViewing.find('.film-detail-content > h2 > a');
+				const filmReviewLink = activityViewing.find('.body h2 > a');
 				const filmReviewHref = filmReviewLink.attr('href');
 				const filmReviewHrefParts = filmReviewHref ? trimString(filmReviewHref, '/').split('/') : [];
 				const filmType = filmReviewHrefParts[1];
 				const filmSlugFromViewing = filmReviewHrefParts[2];
 				if(filmSlug && filmSlug != filmSlugFromViewing) {
-					console.warn(`Review href ${filmReviewHref} didn't have expected structure`);
+					console.warn(`Viewing href ${filmReviewHref} didn't have expected structure for entry ${entryIndex}\n\tfilmSlug: ${filmSlug}\n\tfilmSlugFromViewing: ${filmSlugFromViewing}`);
 				}
 				const filmName = filmReviewLink.text();
-				const filmYearLink = activityViewing.find('.film-detail-content > h2 > small.metadata > a');
+				const filmYearLink = activityViewing.find('.body h2 > .metadata > a');
 				const filmYear = filmYearLink.text().trim();
-				const ratingTag = activityViewing.find('.film-detail-content > .film-detail-meta > .rating');
+				const ratingTag = activityViewing.find('.body .rating');
 				let rating: number | undefined = undefined;
 				if(ratingTag.index() !== -1) {
 					rating = parseRatingString(ratingTag.text());
 				}
-				const contextTag = activityViewing.find('.film-detail-content .attribution > .context');
-				const viewerLink = contextTag.children('a');
+				const attributionTag = activityViewing.find('.body .attribution-detail');
+				const viewerLink = attributionTag.find('> a');
 				const viewerHref = viewerLink.attr('href');
 				const viewerName = viewerLink.text();
 				const viewerSlug = viewerHref ? trimString(viewerHref, '/').split('/')[0] : undefined;
@@ -683,8 +683,8 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 				} else if(viewerSlug.indexOf('/') != -1) {
 					console.warn(`Parsed user slug ${viewerSlug} from href ${viewerHref} contains a slash on entry ${entryIndex}`);
 				}
-				const bodyTextTag = activityViewing.find('.film-detail-content .body-text');
-				const actionTypeStr = $(lastFromArray(contextTag[0].childNodes)).text()?.trim().toLowerCase();
+				const bodyTextTag = activityViewing.find('.body .body-text');
+				const actionTypeStr = $(lastFromArray(attributionTag[0].childNodes)).text()?.trim().toLowerCase();
 				actionTypes = [actionTypeStr as ActivityActionType];
 				viewing = {
 					user: {
