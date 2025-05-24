@@ -428,7 +428,7 @@ export const parseViewingListPage = (pageData: string): ReviewsPage => {
 export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: cheerio.CheerioAPI): Viewing => {
 	const avatarTag = reviewTag.find('a.avatar');
 	const contextTag = reviewTag.find('.body a.context');
-	const contextText = contextTag.text()?.toLowerCase();
+	const contextText = contextTag.text()?.trim().toLowerCase();
 	const bodyTextTag = reviewTag.find('.body .body-text');
 	const collapsedTextTag = bodyTextTag.find('.collapsed-text');
 	const timestamp = reviewTag.find('time').attr("datetime");
@@ -447,9 +447,9 @@ export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: 
 		fullTextHref: bodyTextTag.attr('data-full-text-url'),
 		hasMoreText: (bodyTextTag.index() != -1) ? (collapsedTextTag.index() !== -1) : undefined,
 		date: timestamp!,
-		isRewatch: (contextText != null ?
-			(contextText.startsWith('rewatched ') ? true
-			: contextText.startsWith('watched ') ? false
+		isRewatch: (contextText ?
+			(contextText.startsWith('rewatched') ? true
+			: contextText.startsWith('watched') ? false
 			: undefined)
 			: undefined)
 	};
