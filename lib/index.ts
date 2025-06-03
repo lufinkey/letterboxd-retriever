@@ -17,6 +17,19 @@ import * as lbparse from './parser';
 export * from './types';
 export { BASE_URL } from './urls';
 
+const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Response> => {
+	const res = await fetch(url, options);
+	if(!res.ok) {
+		res.body?.cancel();
+		throw letterboxdHttpError({
+			url,
+			statusCode: res.status,
+			message: res.statusText
+		});
+	}
+	return res;
+};
+
 export type FilmURLOptions = lburls.FilmURLOptions;
 export type GetFilmOptions = (FilmURLOptions | {tmdbId: string} | {imdbId: string}) & {
 	includeAjaxContent?: boolean;
@@ -36,15 +49,7 @@ export const getFilmInfo = async (options: GetFilmOptions): Promise<FilmInfo> =>
 	} else {
 		throw new Error(`No slug, href, or id was provided`);
 	}
-	const res = await fetch(url);
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
+	const res = await sendHttpRequest(url);
 	const resData = await res.text();
 	const $ = cheerio.load(resData);
 	const ldJson = lbparse.parseLdJson($);
@@ -79,17 +84,9 @@ export const getFilmHrefFromExternalID = async (options: GetFilmFromExternalIDOp
 	} else {
 		throw new Error(`No external id was provided`);
 	}
-	const res = await fetch(url, {
+	const res = await sendHttpRequest(url, {
 		method: 'HEAD'
 	});
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
 	const filmHref = lburls.hrefFromURL(res.url);
 	let cmpHref = filmHref;
 	if(filmHref.endsWith('/')) {
@@ -124,15 +121,7 @@ export type GetFriendsReviewsOptions = lburls.FriendsReviewsOptions;
 
 export const getFriendsReviews = async (options: GetFriendsReviewsOptions): Promise<ReviewsPage> => {
 	const url = lburls.friendsReviewsURL(options);
-	const res = await fetch(url);
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
+	const res = await sendHttpRequest(url);
 	const resData = await res.text();
 	return lbparse.parseViewingListPage(resData);
 };
@@ -148,20 +137,12 @@ export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film
 	}
 	const url = lburls.filmPosterURL(posterOpts as lburls.FilmPosterURLOptions);
 	//console.log(`fetching poster from url ${url}`);
-	const res = await fetch(url);
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
+	const res = await sendHttpRequest(url);
 	const resData = await res.text();
 	return lbparse.parseFilmPosterPage(resData);
 };
 
-export const fetchFilmPostersForItems = async <TItem>(
+const fetchFilmPostersForItems = async <TItem>(
 	items: TItem[],
 	forEachFilm: ((item: TItem, callback: (film: Film) => Promise<void>) => Promise<void>),
 	options: {posterSize?: PosterSize}): Promise<void> => {
@@ -216,14 +197,7 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	// fetch csrf if needed
 	let csrf: string | null | undefined = options.csrf;
 	if(!csrf) {
-		const res = await fetch(feedPageURL);
-		if(!res.ok) {
-			throw letterboxdHttpError({
-				url: feedPageURL,
-				statusCode: res.status,
-				message: res.statusText
-			});
-		}
+		const res = await sendHttpRequest(feedPageURL);
 		const resData = await res.text();
 		csrf = lbparse.parseCSRF(resData);
 		if(!csrf) {
@@ -236,20 +210,12 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 		username: username,
 		csrf: csrf
 	});
-	const res = await fetch(feedAjaxURL, {
+	const res = await sendHttpRequest(feedAjaxURL, {
 		referrer: feedPageURL,
 		headers: {
 			'Host': lburls.HOST
 		}
 	});
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url: feedAjaxURL,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
 	const resData = await res.text();
 	//console.log(resData);
 	const result = lbparse.parseAjaxActivityFeed(resData);
@@ -270,6 +236,35 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	};
 };
 
+export type GetFilmsPageOptions = {href: string} & {
+	includeAjaxContent?: boolean;
+	posterSize?: {width: number, height: number};
+};
+
+export const getFilmsPage = async (options: GetFilmsPageOptions): Promise<FilmsPage> => {
+	const url = lburls.urlFromHref(options.href);
+	const res = await sendHttpRequest(url);
+	const resData = await res.text();
+	const $ = cheerio.load(resData);
+	let page = lbparse.parseFilmsPage($);
+	if(!page?.items || page.items.length == 0) {
+		// check if page should be parsed from an ajax call
+		const ajaxHref = lbparse.parseAjaxHrefFromFilmsPage($);
+		if(ajaxHref) {
+			// fetch ajax page
+			const ajaxUrl = lburls.urlFromHref(ajaxHref);
+			const ajaxRes = await sendHttpRequest(ajaxUrl);
+			const ajaxResData = await ajaxRes.text();
+			page = lbparse.parseFilmsPage(`<body id="root">${ajaxResData}</body>`);
+		}
+	}
+	// fetch ajax content if needed
+	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
+		await fetchFilmPostersForItems(page.items, (item, callback) => callback(item), {posterSize:options.posterSize});
+	}
+	return page;
+};
+
 export type GetFilmListPageOptions = {href: string} & {
 	includeAjaxContent?: boolean,
 	posterSize?: {width: number, height: number}
@@ -277,15 +272,7 @@ export type GetFilmListPageOptions = {href: string} & {
 
 export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<FilmListPage> => {
 	const url = lburls.urlFromHref(options.href);
-	const res = await fetch(url);
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
+	const res = await sendHttpRequest(url);
 	const resData = await res.text();
 	const page = lbparse.parseFilmListPage(resData);
 	// fetch ajax content if needed
@@ -295,28 +282,16 @@ export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<
 	return page;
 };
 
-
 export type GetSimilarFilmsOptions = lburls.FilmURLOptions & {
 	includeAjaxContent?: boolean;
 	posterSize?: {width: number, height: number};
 };
 
 export const getSimilar = async (options: GetSimilarFilmsOptions): Promise<FilmsPage> => {
-	const url = lburls.similarItemsURL(options);
-	const res = await fetch(url);
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
-	}
-	const resData = await res.text();
-	const page = lbparse.parseFilmsPage(resData);
-	// fetch ajax content if needed
-	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
-		await fetchFilmPostersForItems(page.items, (item, callback) => callback(item), {posterSize:options.posterSize});
-	}
-	return page;
+	const href = lburls.similarItemsHref(options);
+	return await getFilmsPage({
+		href,
+		includeAjaxContent: options.includeAjaxContent,
+		posterSize: options.posterSize,
+	});
 };

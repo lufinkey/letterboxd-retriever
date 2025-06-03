@@ -3,7 +3,7 @@ import * as letterboxd from './index';
 import * as lburls from './urls';
 
 let testsToRun = process.argv.slice(2);
-console.log(`tests to run = ${JSON.stringify(testsToRun)}`);
+console.log(`tests to run = ${testsToRun.length > 0 ? JSON.stringify(testsToRun) : "all"}`);
 console.log();
 testsToRun = testsToRun.map((testName) => testName.toLowerCase());
 
@@ -74,11 +74,33 @@ const tests: {[key:string]: any} = {
 		return await letterboxd.getFilmListPage({href:'/darrencb/list/letterboxds-top-250-horror-films/detail'});
 	},
 
+	async testGetFilmListDetailPageWithNotes() {
+		return await letterboxd.getFilmListPage({href:'/saffronmaeve/list/contours/detail'});
+	},
+
 	async testGetSimilar() {
 		const opts: letterboxd.GetSimilarFilmsOptions = {href:'/film/deadpool-wolverine'};
 		console.log(`\t${lburls.similarItemsURL(opts)}`);
 		return await letterboxd.getSimilar(opts);
-	}
+	},
+
+	async testGetSimilar2() {
+		const opts: letterboxd.GetSimilarFilmsOptions = {href:'/film/mission-impossible-the-final-reckoning'};
+		console.log(`\t${lburls.similarItemsURL(opts)}`);
+		return await letterboxd.getSimilar(opts);
+	},
+
+	async testGetRelated() {
+		return await letterboxd.getFilmsPage({href:'/films/in/the-lord-of-the-rings-collection/by/release-earliest/size/large'});
+	},
+
+	async testGetUserReviews() {
+		return await letterboxd.getFilmListPage({href:'/criterion/films/reviews'});
+	},
+
+	async testGetUserFilms() {
+		return await letterboxd.getFilmListPage({href:'/criterion/films'});
+	},
 };
 
 (async () => {

@@ -23,7 +23,7 @@ export interface PersonalActivityFeedOptions {
 export type FilmURLOptions = ({filmSlug: string} | {href: string});
 
 export const urlFromHref = (href: string) => {
-	if(href.indexOf(':') !== -1) {
+	if(href.indexOf('://') !== -1) {
 		return href;
 	}
 	if(!href.startsWith('/')) {
@@ -116,21 +116,26 @@ export const followingActivityFeedAjaxURL = (options: {
     return url;
 };
 
-export const similarItemsURL = (options: FilmURLOptions) => {
-	let url = BASE_URL;
+export const similarItemsHref = (options: FilmURLOptions) => {
+	let href: string;
 	if('filmSlug' in options && options.filmSlug) {
-		url += `/film/${options.filmSlug}/`;
+		href = `/film/${options.filmSlug}/`;
 	} else if('href' in options && options.href) {
-		if(!options.href.startsWith('/')) {
-			url += '/';
+		if(options.href.startsWith('/')) {
+			href = options.href;
+		} else {
+			href = '/'+options.href;
 		}
-		url += options.href;
 	} else {
 		throw new Error("No href or slug provided");
 	}
-	if(!url.endsWith('/')) {
-		url += '/';
+	if(!href.endsWith('/')) {
+		href += '/';
 	}
-	url += 'similar';
-	return url;
+	href += 'similar';
+	return href;
+}
+
+export const similarItemsURL = (options: FilmURLOptions) => {
+	return BASE_URL + similarItemsHref(options);
 };

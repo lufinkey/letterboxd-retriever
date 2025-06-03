@@ -852,6 +852,15 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 	return {items};
 };
 
+export const parseAjaxHrefFromFilmsPage = ($: cheerio.CheerioAPI): string | undefined => {
+	// check if films page is loaded via ajax
+	const filmsContainer = $('#films-browser-list-container');
+	if(filmsContainer.index() == -1) {
+		return undefined;
+	}
+	return filmsContainer.attr('data-url');
+};
+
 export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmListPage => {
 	let $: cheerio.CheerioAPI;
 	if(typeof(pageData) === 'string') {
@@ -860,10 +869,54 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 		$ = pageData;
 	}
 	const pageType = $('head meta[property="og:type"]').attr('content');
+	// parse total items count
+	let totalCount: number | undefined = undefined;
+	if(pageType == 'letterboxd:list') {
+		const pageDescr = $('head meta[name="description"]').attr('content');
+		const prefix = 'A list of ';
+		if(pageDescr?.startsWith(prefix)) {
+			let nextWhitespaceIndex = pageDescr.indexOf(' ', prefix.length);
+			if(nextWhitespaceIndex == -1) {
+				nextWhitespaceIndex = pageDescr.length;
+			}
+			totalCount = Number.parseInt(pageDescr.substring(prefix.length, nextWhitespaceIndex));
+			if(Number.isNaN(totalCount)) {
+				totalCount = undefined;
+			}
+		}
+	}
+	// parse title
+	const listTitleTag = $('.list-title-intro').first();
+	let gotTitleFromTag = true;
+	let title: (string | undefined) = listTitleTag.find('.title1').first().text();
+	if(!title) {
+		gotTitleFromTag = false;
+		title = $('head meta[property="og:title"]').attr('content');
+	}
+	// parse description
+	const descriptionTag = listTitleTag.find('.body-text:not(:has(.collapsed-text))').first();
+	let descriptionText: (string | undefined) = (descriptionTag.index() != -1) ? descriptionTag.find('> p').toArray().map((item) => $(item).text()).join("\n") : undefined;
+	if(descriptionText == null) {
+		descriptionText = $('head meta[property="og:description"]').attr('content');
+	}
+	const descriptionHtml = descriptionTag.html() ?? undefined;
+	// parse list properties
+	const backdrop = $('#backdrop');
+	const contentNav = $('#content-nav');
+	const publishedAt = contentNav.find('.published time').attr('datetime');
+	const updatedAt = contentNav.find('.updated time').attr('datetime');
+	// get item list
 	const posterList = $('ul.poster-list');
-	const viewingList = $('.viewing-list');
+	const hasPosterList = posterList.index() != -1;
+	let detailedList = !hasPosterList ? $('.list-detailed-entries-list') : null;
+	let isViewingList = false;
+	if(!hasPosterList && (!detailedList || detailedList.index() == -1)) {
+		detailedList = $('.viewing-list');
+		isViewingList = detailedList.index() != -1;
+	}
+	// parse items
 	const items: FilmListItem[] = [];
-	if(posterList.index() != -1) {
+	if(hasPosterList) {
 		for(const element of posterList.find('> li')) {
 			const elementTag = $(element);
 			const film = parseFilmPosterContainer(elementTag);
@@ -886,6 +939,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 			if(ownerRating == null) {
 				ownerRating = ownerRatingStr;
 			}
+			// add item
 			items.push({
 				id: (id ?? objectId)!,
 				order: orderNum!,
@@ -893,8 +947,8 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 				film: film
 			});
 		}
-	} else if(viewingList.index() != -1) {
-		for(const element of viewingList.find('> .listitem')) {
+	} else if(detailedList && detailedList.index() != -1) {
+		for(const element of detailedList.find('> .listitem')) {
 			const elementTag = $(element);
 			const film = parseFilmPosterContainer(elementTag);
 			// parse order number
@@ -918,36 +972,57 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 			// parse owner rating
 			const ratingStr = elementTag.find('.rating').text()?.trim();
 			const rating = parseRatingString(ratingStr);
+			// parse notes text
+			let hasMoreNotes: (boolean | undefined);
+			const bodyTextTag = elementTag.find('.body-text').first();
+			const hasBodyTextTag = bodyTextTag.index() != -1;
+			const collapsedTextTag = bodyTextTag.find('> .collapsed-text');
+			let notesTag = bodyTextTag;
+			if(collapsedTextTag.index() != -1) {
+				notesTag = collapsedTextTag;
+				hasMoreNotes = true;
+			} else if(hasBodyTextTag) {
+				hasMoreNotes = false;
+			}
+			const fullNotesHref = hasBodyTextTag ? bodyTextTag.attr('data-full-text-url') : undefined;
+			const bodyTextParts = notesTag.find('> p');
+			const notesText = (bodyTextParts.length > 0) ?
+				bodyTextParts.toArray().map((item) => $(item).text()).join("\n")
+				: hasBodyTextTag ? notesTag.text() : undefined;
+			const notesHtml = hasBodyTextTag ? (notesTag.html() ?? undefined) : undefined;
+			// parse viewing properties if viewing list
+			let viewingHref: (string | undefined) = undefined;
+			let viewingDate: (string | undefined) = undefined;
+			if(isViewingList) {
+				const attributionBlock = elementTag.find('.attribution-block');
+				viewingHref = attributionBlock.find('a.context').attr('href');
+				const timeTag = attributionBlock.find('time');
+				viewingDate = timeTag.attr('datetime');
+			}
+			// add item
 			items.push({
 				id: (id ?? objectId)!,
 				order: orderNum!,
 				ownerRating: rating as number,
-				film: film
+				film: film,
+				notesText,
+				notesHtml,
+				fullNotesHref,
+				hasMoreNotes,
+				viewingHref,
+				viewingDate,
 			});
 		}
 	} else {
+		if((!title || !gotTitleFromTag) && !publishedAt && !updatedAt) {
+			throw new Error("No film or viewing list found");
+		}
 		console.error("No film or viewing list found");
 	}
-	let totalCount: number | undefined = undefined;
-	if(pageType == 'letterboxd:list') {
-		const pageDescr = $('head meta[name="description"]').attr('content');
-		const prefix = 'A list of ';
-		if(pageDescr?.startsWith(prefix)) {
-			let nextWhitespaceIndex = pageDescr.indexOf(' ', prefix.length);
-			if(nextWhitespaceIndex == -1) {
-				nextWhitespaceIndex = pageDescr.length;
-			}
-			totalCount = Number.parseInt(pageDescr.substring(prefix.length, nextWhitespaceIndex));
-			if(Number.isNaN(totalCount)) {
-				totalCount = undefined;
-			}
-		}
-	}
-	const backdrop = $('#backdrop');
-	const contentNav = $('#content-nav');
-	const publishedAt = contentNav.find('.published time').attr('datetime');
-	const updatedAt = contentNav.find('.updated time').attr('datetime');
 	return {
+		title: title!,
+		descriptionText,
+		descriptionHtml,
 		items: items,
 		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
 		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
