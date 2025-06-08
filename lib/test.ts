@@ -82,16 +82,16 @@ const tests: {[key:string]: any} = {
 		return await letterboxd.getFilmList({href:'/saffronmaeve/list/contours/detail'});
 	},
 
-	async testGetSimilar() {
+	async testGetSimilarFilms() {
 		const opts: letterboxd.GetSimilarFilmsOptions = {href:'/film/deadpool-wolverine'};
 		console.log(`\t${lburls.similarItemsURL(opts)}`);
-		return await letterboxd.getSimilar(opts);
+		return await letterboxd.getSimilarFilms(opts);
 	},
 
-	async testGetSimilar2() {
+	async testGetSimilarFilms2() {
 		const opts: letterboxd.GetSimilarFilmsOptions = {href:'/film/mission-impossible-the-final-reckoning'};
 		console.log(`\t${lburls.similarItemsURL(opts)}`);
-		return await letterboxd.getSimilar(opts);
+		return await letterboxd.getSimilarFilms(opts);
 	},
 
 	async testGetRelated() {

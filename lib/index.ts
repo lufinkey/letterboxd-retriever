@@ -298,7 +298,7 @@ export type GetSimilarFilmsOptions = lburls.SimilarToFilmHrefOptions & {
 	posterSize?: {width: number, height: number};
 };
 
-export const getSimilar = async (options: GetSimilarFilmsOptions): Promise<FilmsPage> => {
+export const getSimilarFilms = async (options: GetSimilarFilmsOptions): Promise<FilmsPage> => {
 	const href = lburls.similarItemsHref(options);
 	return await getFilms({
 		href,
