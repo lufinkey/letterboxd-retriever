@@ -1,19 +1,23 @@
 import { HOST } from './constants';
 import {
+	AnyGenreSlug,
 	FilmHrefSubroute,
 	FilmHrefSubroutesSet,
 	FirstYearInReview,
 	GenreFilter,
+	GenreSlugArray,
 	HQMembersOrganizationType,
 	HrefBaseMediaPageSlug,
 	HrefFilterProps,
 	HrefFilterSlug,
+	HrefFilterSlugs,
 	hrefFilterSlugToKey,
 	HrefParts,
 	MembersType,
 	OtherPageSlug,
 	OtherPageSlugs,
 	PopularFilter,
+	PopularFilterProps,
 	PopularityReferenceTime,
 	PopularityTimeSpan,
 	RoleFilter,
@@ -130,26 +134,35 @@ const parseHrefGenreFilterValue = (
 	hrefPieces: string[],
 	indexRef: IndexRef,
 	offset: number,
-): GenreFilter[] => {
-	const genres: GenreFilter[] = [];
+): GenreSlugArray => {
+	const genres: GenreSlugArray = [];
 	const genreSlug = hrefPieces[indexRef.index+offset];
 	let startIndex = 0;
-	let searchStartIndex = 0;
-	if(genreSlug.startsWith('-') || genreSlug.startsWith('+')) {
-		searchStartIndex += 1;
+	let substringStartIndex = 0;
+	if(genreSlug.startsWith('+')) {
+		substringStartIndex += 1;
 	}
-	for(let i=searchStartIndex; i<genreSlug.length; i++) {
+	for(let i=substringStartIndex; i<genreSlug.length; i++) {
 		const c = genreSlug[i];
 		if(c == '+') {
-			genres.push(genreSlug.substring(0, i) as GenreFilter);
+			genres.push(genreSlug.substring(substringStartIndex, i) as AnyGenreSlug);
 			startIndex = i;
+			substringStartIndex = (i+1);
 		}
 	}
-	if(startIndex < genreSlug.length) {
-		genres.push(genreSlug.substring(startIndex, genreSlug.length) as GenreFilter);
+	if(substringStartIndex < genreSlug.length) {
+		genres.push(genreSlug.substring(startIndex, genreSlug.length) as AnyGenreSlug);
 	}
 	return genres;
 }
+
+const stringifyGenreFilterValue = (genre: GenreFilter): string => {
+	if(genre instanceof Array) {
+		return genre.map((g) => (g.startsWith('+') ? g.substring(1) : g)).join('+');
+	} else {
+		return genre;
+	}
+};
 
 const parseHrefFilterProps = (
 	hrefParts: HrefFilterProps,
@@ -206,6 +219,59 @@ const parseHrefFilterProps = (
 				);
 		}
 	}
+};
+
+export const stringifyHrefFilterProps = (hrefParts: HrefFilterProps): string => {
+	const hrefPieces: string[] = [];
+	for(const slug of HrefFilterSlugs) {
+		const key = hrefFilterSlugToKey(slug);
+		const val = (hrefParts as any)[key];
+		if(val != null) {
+			switch(slug) {
+				case HrefFilterSlug.For:
+				case HrefFilterSlug.Rated:
+				case HrefFilterSlug.Decade:
+				case HrefFilterSlug.Year:
+				case HrefFilterSlug.Like:
+				case HrefFilterSlug.In:
+				case HrefFilterSlug.Nanogenre:
+				case HrefFilterSlug.Theme:
+				case HrefFilterSlug.MiniTheme:
+				case HrefFilterSlug.On:
+				case HrefFilterSlug.By:
+				case HrefFilterSlug.Size:
+				case HrefFilterSlug.Page: {
+					hrefPieces.push(slug, val);
+				} break;
+				case HrefFilterSlug.Upcoming: {
+					hrefPieces.push(slug);
+				} break;
+				case HrefFilterSlug.Popular: {
+					if(val) {
+						hrefPieces.push(slug);
+						if(typeof val !== 'boolean') {
+							const popular = (val as PopularFilterProps);
+							hrefPieces.push(popular.refTime, popular.span);
+						}
+					}
+				} break;
+				case HrefFilterSlug.Genre: {
+					hrefPieces.push(slug, stringifyGenreFilterValue(val));
+				} break;
+				case HrefFilterSlug.With: {
+					const role = val as RoleFilter;
+					hrefPieces.push(
+						slug,
+						role.roleSlug,
+						role.personSlug,
+					);
+				} break;
+				default:
+					throw new Error(`I didn't define how to stringify ${slug}! whoops!`)
+			}
+		}
+	}
+	return hrefPieces.join('/');
 };
 
 export const parseHref = (href: string): HrefParts => {

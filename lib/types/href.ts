@@ -13,10 +13,12 @@ export enum PopularityTimeSpan {
 }
 export const PopularityTimeSpans = Object.values(PopularityTimeSpan);
 
-export type PopularFilter = true | {
+export type PopularFilterProps = {
 	refTime: PopularityReferenceTime;
 	span: PopularityTimeSpan;
-};
+}
+
+export type PopularFilter = true | PopularFilterProps;
 
 export enum RatingSlug {
 	None = 'none',
@@ -76,9 +78,15 @@ export enum GenreSlug {
 	Western = 'western',
 }
 
-export type ExcludeGenreFilter = `-${GenreSlug}`;
-export type IncludeGenreFilter = `+${GenreSlug}`;
-export type GenreFilter = GenreSlug | ExcludeGenreFilter | IncludeGenreFilter;
+export type ExcludeGenreSlug = `-${GenreSlug}`;
+export type IncludeGenreSlug = `+${GenreSlug}`;
+export type AnyGenreSlug = (GenreSlug | IncludeGenreSlug | ExcludeGenreSlug);
+export type GenreSlugArray = AnyGenreSlug[];
+export type GenreFilter = GenreSlugArray | AnyGenreSlug;
+
+export const excludeGenre = (genre: GenreSlug): ExcludeGenreSlug => {
+	return `-${genre}`;
+};
 
 export enum StreamingServiceSlug {
 	AmazonUSA = 'amazon-usa',
@@ -235,19 +243,19 @@ export type HrefSortOrPopularFilterProps<TSortBy = SortByFilter> = {popular: Pop
 
 // /films/
 
-export type FilmsHrefArgs = {
+export type FilmsHrefArgs =
+HrefSortOrPopularFilterProps<FilmsSortByFilter> & {
 	rated?: RatingFilter;
 } & HrefTimespanFilterProps & {
 	like?: string;
 	in?: string;
-} & HrefSortOrPopularFilterProps<FilmsSortByFilter> & { // default is by popular
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	nanogenre?: string;
 	theme?: string;
 	minitheme?: string;
 	on?: StreamingServiceSlug;
 	with?: RoleFilter;
-	// by: SortByFilter
+	// by: SortByFilter // default is by popular
 	size?: SizeSlug;
 	page?: number | `${number}`;
 };
@@ -414,7 +422,7 @@ export const TagsTypesSet = new Set(TagsTypes);
 
 type TagFilmsFilters =
 HrefTimespanFilterProps & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	on?: StreamingServiceSlug;
 	by?: TagFilmsSortByFilter;
 	page?: number | `${number}`;
@@ -572,7 +580,7 @@ export type UserFilmsHrefArgs = {
 } & HrefTimespanFilterProps & {
 	like?: string;
 	in?: string;
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	nanogenre?: string;
 	theme?: string;
 	minitheme?: string;
@@ -592,7 +600,7 @@ export type UserDiaryHrefArgs = {
 	for?: number | `${number}`; // year
 	rated?: RatingFilter;
 } & HrefTimespanFilterProps & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	on?: StreamingServiceSlug;
 	by?: UserDiarySortByFilter; // default is by watched date
 	page?: number | `${number}`;
@@ -780,7 +788,7 @@ export type UserWatchlistSortByFilter =
 
 export type UserWatchlistHrefArgs =
 HrefTimespanFilterProps & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	on?: StreamingServiceSlug;
 	by?: UserWatchlistSortByFilter; // default is by added
 	page?: number | `${number}`;
@@ -809,7 +817,7 @@ export type ListSortByFilter =
 export type ListHrefArgs = {
 	detail?: true;
 } & HrefTimespanFilterProps & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	on?: StreamingServiceSlug;
 	by?: ListSortByFilter; // default is by list order
 	page?: number | `${number}`;
@@ -839,7 +847,7 @@ export type UserLikedFilmsSortByFilter =
 export type UserLikedFilmsHrefArgs = {
 	rated?: RatingFilter;
 } & HrefTimespanFilterProps & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	on?: StreamingServiceSlug;
 	by?: UserLikedFilmsSortByFilter; // default is when liked
 	page?: number | `${number}`;
@@ -906,7 +914,7 @@ export type UserTagDiaryHrefArgs = {
 	for?: number | `${number}`; // year
 	rated?: RatingFilter;
 } & HrefTimespanFilterProps & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	on?: StreamingServiceSlug;
 	by?: UserTagDiarySortByFilter;
 	page?: number | `${number}`;
@@ -1263,6 +1271,7 @@ export type HrefParts = (
 
 
 export enum HrefFilterSlug {
+	Popular = 'popular',
 	For = 'for',
 	Rated = 'rated',
 	Upcoming = 'upcoming',
@@ -1270,7 +1279,6 @@ export enum HrefFilterSlug {
 	Year = 'year',
 	Like = 'like',
 	In = 'in',
-	Popular = 'popular',
 	Genre = 'genre',
 	Nanogenre = 'nanogenre',
 	Theme = 'theme',
@@ -1291,14 +1299,14 @@ export const hrefFilterSlugToKey = (slug: string): string => {
 	return slug as (keyof HrefFilterProps);
 };
 
-export type HrefFilterProps = {
+export type HrefFilterProps =
+HrefSortOrPopularFilterProps<SortByFilter> & {
 	for?: number | `${number}`;
 	rated?: RatingFilter;
 } & HrefTimespanFilterProps & {
 	like?: string;
 	in?: string;
-} & HrefSortOrPopularFilterProps<SortByFilter> & {
-	genre?: GenreFilter[];
+	genre?: GenreFilter;
 	nanogenre?: string;
 	theme?: string;
 	minitheme?: string;

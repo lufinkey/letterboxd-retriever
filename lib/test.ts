@@ -29,9 +29,13 @@ const tests: {[key:string]: any} = {
 	},
 
 	async testGetFriendsReviews() {
-		const opts: letterboxd.GetFriendsReviewsOptions = {username:'luisfinke', filmSlug:'legend'};
-		console.log(`\t${lburls.friendsReviewsURL(opts)}`);
-		return await letterboxd.getFriendsReviews(opts);
+		const opts: letterboxd.GetReviewsOptions = {
+			userSlug: 'luisfinke',
+			filmSlug: 'legend',
+			friends: true,
+		};
+		console.log(`\t${lburls.reviewsURL(opts)}`);
+		return await letterboxd.getReviews(opts);
 	},
 
 	async testGetFilmInfoWithSlug() {

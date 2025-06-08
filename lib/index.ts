@@ -18,6 +18,8 @@ import * as lbparse from './parser';
 export * from './types';
 export { HOST, BASE_URL } from './constants';
 
+// base methods
+
 const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Response> => {
 	const res = await fetch(url, options);
 	if(!res.ok) {
@@ -31,7 +33,11 @@ const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Resp
 	return res;
 };
 
-export type FilmURLOptions = lburls.FilmURLOptions;
+
+
+// Film
+
+export type FilmURLOptions = lburls.FilmHrefOptions;
 export type GetFilmOptions = (FilmURLOptions | {tmdbId: string} | {imdbId: string}) & {
 	includeAjaxContent?: boolean;
 	relatedFilmsPosterSize?: PosterSize;
@@ -73,6 +79,10 @@ export const getFilmInfo = async (options: GetFilmOptions): Promise<FilmInfo> =>
 		ldJson
 	};
 };
+
+
+
+// Film ID from External ID
 
 export type GetFilmFromExternalIDOptions = ({tmdbId: string} | {imdbId: string});
 
@@ -118,16 +128,11 @@ export const getFilmSlugFromExternalID = async (options: GetFilmFromExternalIDOp
 	return hrefParts[1];
 };
 
-export type GetFriendsReviewsOptions = lburls.FriendsReviewsOptions;
 
-export const getFriendsReviews = async (options: GetFriendsReviewsOptions): Promise<ReviewsPage> => {
-	const url = lburls.friendsReviewsURL(options);
-	const res = await sendHttpRequest(url);
-	const resData = await res.text();
-	return lbparse.parseViewingListPage(resData);
-};
 
-export type GetFilmPosterOptions = lburls.FilmURLOptions & {
+// Film Poster
+
+export type GetFilmPosterOptions = lburls.FilmHrefOptions & {
 	posterSize?: PosterSize
 };
 
@@ -183,6 +188,10 @@ const fetchFilmPostersForItems = async <TItem>(
 		});
 	}));
 };
+
+
+
+// Activity
 
 export type GetUserFollowingFeedOptions = {
 	after?: number | string | null | undefined,
@@ -242,6 +251,23 @@ export type GetFilmsPageOptions = {href: string} & {
 	posterSize?: {width: number, height: number};
 };
 
+
+
+// Reviews
+
+export type GetReviewsOptions = lburls.ReviewsHrefOptions;
+
+export const getReviews = async (options: GetReviewsOptions) => {
+	const url = lburls.reviewsURL(options);
+	const res = await sendHttpRequest(url);
+	const resData = await res.text();
+	return lbparse.parseViewingListPage(resData);
+};
+
+
+
+// Films
+
 export const getFilmsPage = async (options: GetFilmsPageOptions): Promise<FilmsPage> => {
 	const url = lburls.urlFromHref(options.href);
 	const res = await sendHttpRequest(url);
@@ -266,6 +292,10 @@ export const getFilmsPage = async (options: GetFilmsPageOptions): Promise<FilmsP
 	return page;
 };
 
+
+
+// Film List
+
 export type GetFilmListPageOptions = {href: string} & {
 	includeAjaxContent?: boolean,
 	posterSize?: {width: number, height: number}
@@ -283,7 +313,7 @@ export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<
 	return page;
 };
 
-export type GetSimilarFilmsOptions = lburls.FilmURLOptions & {
+export type GetSimilarFilmsOptions = lburls.FilmHrefOptions & {
 	includeAjaxContent?: boolean;
 	posterSize?: {width: number, height: number};
 };

@@ -5,7 +5,7 @@ import {
 } from './common';
 
 export type FilmsPage = {
-	items: Film[]
+	items: Film[];
 };
 
 export type FilmListItem = {
