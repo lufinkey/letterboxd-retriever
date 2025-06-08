@@ -1,12 +1,13 @@
 
 import {
 	Film,
-	PageBackdrop
+	PageBackdrop,
+	Pagination,
 } from './common';
 
 export type FilmsPage = {
 	items: Film[];
-};
+} & Pagination;
 
 export type FilmListItem = {
 	id: string;
@@ -26,10 +27,8 @@ export type FilmListPage = {
 	descriptionText?: string;
 	descriptionHtml?: string;
 	items: FilmListItem[];
-	prevPageHref: string | null;
-	nextPageHref: string | null;
 	totalCount?: number | undefined;
 	backdrop?: PageBackdrop | null;
 	publishedAt: Date;
 	updatedAt?: Date | undefined;
-};
+} & Pagination;

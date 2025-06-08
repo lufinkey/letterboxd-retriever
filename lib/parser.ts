@@ -18,7 +18,8 @@ import {
 	ErrorPage,
 	FilmListItem,
 	FilmListPage,
-	PageBackdrop
+	PageBackdrop,
+	Pagination
 } from './types';
 
 const CSRF_TEXT_PREFIX = "supermodelCSRF = '";
@@ -43,6 +44,10 @@ export const parsePageBackdropTag = (backdropTag: cheerio.Cheerio<any>): PageBac
 		mobile: parseCacheBusterURL(backdropTag.attr('data-backdrop-mobile'), 'v')!
 	};
 };
+
+
+
+// Film
 
 export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageData => {
 	let $: cheerio.CheerioAPI;
@@ -184,6 +189,10 @@ export const parseRelatedFilmsContainer = (element: cheerio.Cheerio<Element>, $:
 	};
 };
 
+
+
+// General
+
 export const parseLdJson = (pageData: cheerio.CheerioAPI | string): any => {
 	let $: cheerio.CheerioAPI;
 	if(typeof(pageData) === 'string') {
@@ -282,6 +291,17 @@ const parseRatingString = (ratingStr: string | undefined): number | undefined =>
 	return (2 * countStringOccurences(ratingStr, '★'))
 		+ countStringOccurences(ratingStr, '½');
 };
+
+export const parsePagination = ($: cheerio.CheerioAPI): Pagination => {
+	return {
+		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
+		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
+	};
+};
+
+
+
+// Film Poster
 
 const createFilmPosterURL = (filmId: string, filmSlug: string, width: string | number, height: string | number): string => {
 	return `https://a.ltrbxd.com/resized/film-poster/${filmId.split('').join('/')}/${filmId}-${filmSlug}-0-${width}-0-${height}-crop.jpg`;
@@ -388,6 +408,10 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 	};
 };
 
+
+
+// Viewing List
+
 export const parseViewingListPage = (pageData: string): ReviewsPage => {
 	const $ = cheerio.load(pageData);
 	// find viewing list
@@ -405,23 +429,12 @@ export const parseViewingListPage = (pageData: string): ReviewsPage => {
 		const viewing = parseViewingListElement($(viewingElement), $);
 		viewings.push(viewing);
 	}
-	// get next page url
-	const nextPageURL = viewingList.find('.pagination .paginate-nextprev a.next').attr('href');
-	let nextPage: {href: string, page: number} | null;
-	if(nextPageURL) {
-		const pageParts = trimString(nextPageURL, '/').split('/');
-		let pageNum = Number.parseInt(pageParts[pageParts.length-1]);
-		nextPage = {
-			href: nextPageURL,
-			page: (!Number.isNaN(pageNum) ? pageNum : undefined)!
-		};
-	} else {
-		nextPage = null;
-	}
+	// parse pagination
+	const pagination = parsePagination($);
 	// return data
 	return {
 		items: viewings,
-		nextPage: nextPage
+		...pagination,
 	};
 };
 
@@ -456,6 +469,10 @@ export const parseViewingListElement = (reviewTag: cheerio.Cheerio<Element>, $: 
 			: undefined)
 	};
 };
+
+
+
+// Activity
 
 export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEntry[], end: boolean } => {
 	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
@@ -836,6 +853,9 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 };
 
 
+
+// Films
+
 export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage => {
 	let $: cheerio.CheerioAPI;
 	if(typeof(pageData) === 'string') {
@@ -843,13 +863,19 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 	} else {
 		$ = pageData;
 	}
+	// parse films
 	const items: Film[] = [];
 	const filmGridItems = $('ul.poster-list > li');
 	for(const element of filmGridItems) {
 		const film = parseFilmPosterContainer($(element));
 		items.push(film);
 	}
-	return {items};
+	// parse pagination
+	const pagination = parsePagination($);
+	return {
+		items,
+		...pagination,
+	};
 };
 
 export const parseAjaxHrefFromFilmsPage = ($: cheerio.CheerioAPI): string | undefined => {
@@ -860,6 +886,10 @@ export const parseAjaxHrefFromFilmsPage = ($: cheerio.CheerioAPI): string | unde
 	}
 	return filmsContainer.attr('data-url');
 };
+
+
+
+// Film List
 
 export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmListPage => {
 	let $: cheerio.CheerioAPI;
@@ -1019,20 +1049,24 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 		}
 		console.error("No film or viewing list found");
 	}
+	// parse pagination
+	const pagination = parsePagination($);
 	return {
 		title: title!,
 		descriptionText,
 		descriptionHtml,
 		items: items,
-		prevPageHref: $('#content section .pagination a.previous').attr('href') ?? null,
-		nextPageHref: $('#content section .pagination a.next').attr('href') ?? null,
 		totalCount,
 		backdrop: backdrop.index() !== -1 ? parsePageBackdropTag(backdrop) : null,
 		publishedAt: (publishedAt ? new Date(publishedAt) : undefined)!,
-		updatedAt: (updatedAt ? new Date(updatedAt) : undefined)!
+		updatedAt: (updatedAt ? new Date(updatedAt) : undefined)!,
+		...pagination,
 	};
 };
 
+
+
+// Error
 
 export const parseErrorPage = (pageData: cheerio.CheerioAPI | string): ErrorPage => {
 	let $: cheerio.CheerioAPI;

@@ -49,3 +49,8 @@ export type PosterSize = {
 	width: number;
 	height: number;
 };
+
+export type Pagination = {
+	nextPageHref?: string | null;
+	prevPageHref?: string | null;
+};
