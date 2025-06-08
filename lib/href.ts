@@ -611,6 +611,7 @@ export const parseHref = (href: string): HrefParts => {
 						indexRef.index += (offset + 1);
 						const subroute = hrefPieces[indexRef.index];
 						let viewingId: (number | undefined) = undefined;
+						let viewingSubroute: (string | undefined) = undefined;
 						if(friends ? UserFriendsFilmSubroutesSet.has(subroute as any) : UserFilmSubroutesSet.has(subroute as any)) {
 							if(!friends && subroute == UserFilmSubroute.Likes) {
 								const likesType = hrefPieces[indexRef.index+1];
@@ -640,9 +641,10 @@ export const parseHref = (href: string): HrefParts => {
 								if(!Number.isNaN(viewingId)) {
 									(hrefParts as {viewingId: number}).viewingId = viewingId;
 									indexRef.index += 1;
-									const viewingSubroute = hrefPieces[indexRef.index];
+									viewingSubroute = hrefPieces[indexRef.index];
 									if(UserFilmViewingSubroutesSet.has(subroute as any)) {
 										(hrefParts as {viewingSubroute?: string}).viewingSubroute = viewingSubroute;
+										indexRef.index += 1;
 									}
 									else if(subroute !== undefined) {
 										throw new HrefParseError(
@@ -652,12 +654,15 @@ export const parseHref = (href: string): HrefParts => {
 											"Unknown user film viewing subroute"
 										);
 									}
+									else {
+										viewingSubroute = undefined;
+									}
 								} else {
 									viewingId = undefined;
 								}
 							}
 						}
-						if(viewingId === undefined) {
+						if(viewingId === undefined || viewingSubroute !== undefined) {
 							parseHrefFilterProps(hrefParts as HrefFilterProps, hrefPieces, indexRef);
 						} else if(indexRef.index < hrefPieces.length) {
 							throw new HrefParseError(
