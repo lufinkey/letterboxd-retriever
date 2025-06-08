@@ -3,6 +3,7 @@ import {
 	FilmHrefSubroute,
 	FilmHrefSubroutesSet,
 	FirstYearInReview,
+	GenreFilter,
 	HQMembersOrganizationType,
 	HrefBaseMediaPageSlug,
 	HrefFilterProps,
@@ -125,6 +126,31 @@ const parseHrefRoleFilterValuePieces = (
 	};
 };
 
+const parseHrefGenreFilterValue = (
+	hrefPieces: string[],
+	indexRef: IndexRef,
+	offset: number,
+): GenreFilter[] => {
+	const genres: GenreFilter[] = [];
+	const genreSlug = hrefPieces[indexRef.index+offset];
+	let startIndex = 0;
+	let searchStartIndex = 0;
+	if(genreSlug.startsWith('-') || genreSlug.startsWith('+')) {
+		searchStartIndex += 1;
+	}
+	for(let i=searchStartIndex; i<genreSlug.length; i++) {
+		const c = genreSlug[i];
+		if(c == '+') {
+			genres.push(genreSlug.substring(0, i) as GenreFilter);
+			startIndex = i;
+		}
+	}
+	if(startIndex < genreSlug.length) {
+		genres.push(genreSlug.substring(startIndex, genreSlug.length) as GenreFilter);
+	}
+	return genres;
+}
+
 const parseHrefFilterProps = (
 	hrefParts: HrefFilterProps,
 	hrefPieces: string[],
@@ -139,7 +165,6 @@ const parseHrefFilterProps = (
 			case HrefFilterSlug.Year:
 			case HrefFilterSlug.Like:
 			case HrefFilterSlug.In:
-			case HrefFilterSlug.Genre:
 			case HrefFilterSlug.Nanogenre:
 			case HrefFilterSlug.Theme:
 			case HrefFilterSlug.MiniTheme:
@@ -165,6 +190,9 @@ const parseHrefFilterProps = (
 			} break;
 			case HrefFilterSlug.Popular: {
 				(hrefParts as {popular?: PopularFilter}).popular = parseHrefPopularFilterValuePieces(hrefPieces, indexRef, 1);
+			} break;
+			case HrefFilterSlug.Genre: {
+				hrefParts.genre = parseHrefGenreFilterValue(hrefPieces, indexRef, 1);
 			} break;
 			case HrefFilterSlug.With: {
 				(hrefParts as {with?: RoleFilter}).with = parseHrefRoleFilterValuePieces(hrefPieces, indexRef, 1);
