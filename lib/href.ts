@@ -405,6 +405,13 @@ export const parseHref = (href: string): HrefParts => {
 			// parse user href
 			const userSlug = base;
 			let userBase = hrefPieces[1];
+			if(userBase === undefined) {
+				hrefParts = {
+					userSlug,
+				};
+				indexRef.index += 1;
+				return hrefParts;
+			}
 			let offset = 2;
 			switch(userBase) {
 				case UserHrefBaseSlug.Films: {
