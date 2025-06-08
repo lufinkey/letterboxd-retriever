@@ -26,14 +26,14 @@ import {
 
 
 export const urlFromHref = (href: string) => {
-	if(href.indexOf('://') !== -1) {
+	if(href.startsWith('/')) {
+		return `${BASE_URL}${href}`;
+	} else if(href.indexOf('://') !== -1) {
+		// href is already a url
 		return href;
 	}
-	if(!href.startsWith('/')) {
-		console.warn(`href ${href} is not an absolute path`);
-		return `${BASE_URL}/${href}`;
-	}
-	return `${BASE_URL}${href}`;
+	console.warn(`href ${href} is not an absolute path`);
+	return `${BASE_URL}/${href}`;
 };
 
 export const hrefFromURL = (url: string) => {
@@ -58,20 +58,20 @@ export const filmHrefFromImdbID = (imdbId: string) => {
 };
 
 export const filmPageURLFromSlug = (slug: string) => {
-	return BASE_URL + filmHrefFromSlug(slug);
+	return urlFromHref(filmHrefFromSlug(slug));
 };
 export const filmPageURLFromTmdbID = (tmdbId: string) => {
-	return BASE_URL + filmHrefFromTmdbID(tmdbId);
+	return urlFromHref(filmHrefFromTmdbID(tmdbId));
 };
 export const filmPageURLFromImdbID = (imdbId: string) => {
-	return BASE_URL + filmHrefFromImdbID(imdbId);
+	return urlFromHref(filmHrefFromImdbID(imdbId));
 };
 
 export type FilmHrefOptions = ({filmSlug: string} | {href: string});
 
 export const filmHref = (opts: FilmHrefOptions): string => {
 	if('href' in opts && opts.href != null) {
-		return opts.href;
+		return hrefFromURL(opts.href);
 	} else if('filmSlug' in opts && opts.filmSlug != null) {
 		return filmHrefFromSlug(opts.filmSlug);
 	}
@@ -79,7 +79,7 @@ export const filmHref = (opts: FilmHrefOptions): string => {
 };
 
 export const filmURL = (opts: FilmHrefOptions): string => {
-	return BASE_URL + filmHref(opts);
+	return urlFromHref(filmHref(opts));
 };
 
 
@@ -252,7 +252,7 @@ export const reviewsHref = (opts: ReviewsHrefOptions): string => {
 };
 
 export const reviewsURL = (opts: ReviewsHrefOptions): string => {
-	return BASE_URL + reviewsHref(opts);
+	return urlFromHref(reviewsHref(opts));
 };
 
 
@@ -367,16 +367,22 @@ export const filmsHref = (opts: FilmsHrefOptions): string => {
 };
 
 export const filmsURL = (opts: FilmsHrefOptions): string => {
-	return BASE_URL + filmsHref(opts);
+	return urlFromHref(filmsHref(opts));
 };
 
 
 
-// Similar Items
+// Similar Films
 
-export type SimilarToFilmHrefOptions = ({href: string} | ({filmSlug: string} & SimilarToFilmHrefArgs));
+export type SimilarToFilmHrefOptions = (
+	{href: string}
+	| (
+		({filmSlug: string}
+			& SimilarToFilmHrefArgs)
+	)
+);
 
-export const similarItemsHref = (opts: SimilarToFilmHrefOptions) => {
+export const similarItemsHref = (opts: SimilarToFilmHrefOptions): string => {
 	let href = filmHref(opts);
 	if(!href.endsWith('/')) {
 		href += '/';
@@ -390,6 +396,42 @@ export const similarItemsHref = (opts: SimilarToFilmHrefOptions) => {
 	return href;
 };
 
-export const similarItemsURL = (options: SimilarToFilmHrefOptions) => {
-	return BASE_URL + similarItemsHref(options);
+export const similarItemsURL = (options: SimilarToFilmHrefOptions): string => {
+	return urlFromHref(similarItemsHref(options));
+};
+
+
+
+// Film List
+
+export type FilmListHrefOptions = (
+	{href: string}
+	| (
+		{
+			userSlug: string;
+			listSlug: string;
+		} & ListHrefArgs
+	)
+);
+
+export const filmListHref = (opts: FilmListHrefOptions): string => {
+	if((opts as {href:string}).href != null) {
+		return (opts as {href:string}).href;
+	}
+	// create trailing href with filters
+	let hrefFilters = stringifyHrefFilterProps(opts as HrefFilterProps);
+	if(hrefFilters && !hrefFilters.endsWith('/')) {
+		hrefFilters += '/';
+	}
+	// stringify href
+	const { userSlug, listSlug, detail, } = opts as {
+		userSlug: (string | undefined),
+		listSlug: (string | undefined),
+		detail: (boolean | undefined),
+	};
+	return `/${userSlug}/list/${listSlug}/${detail ? 'detail/' : ''}${hrefFilters}`;
+};
+
+export const filmListURL = (opts: FilmListHrefOptions): string => {
+	return urlFromHref(filmListHref(opts));
 };

@@ -18,6 +18,7 @@ import * as lbparse from './parser';
 export * from './types';
 export { HOST, BASE_URL } from './constants';
 
+
 // base methods
 
 const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Response> => {
@@ -310,13 +311,13 @@ export const getSimilar = async (options: GetSimilarFilmsOptions): Promise<Films
 
 // Film List
 
-export type GetFilmListPageOptions = {href: string} & {
+export type GetFilmListOptions = lburls.FilmListHrefOptions & {
 	includeAjaxContent?: boolean,
 	posterSize?: {width: number, height: number}
 };
 
-export const getFilmListPage = async (options: GetFilmListPageOptions): Promise<FilmListPage> => {
-	const url = lburls.urlFromHref(options.href);
+export const getFilmList = async (options: GetFilmListOptions): Promise<FilmListPage> => {
+	const url = lburls.filmListURL(options);
 	const res = await sendHttpRequest(url);
 	const resData = await res.text();
 	const page = lbparse.parseFilmListPage(resData);

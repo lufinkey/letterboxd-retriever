@@ -70,16 +70,16 @@ const tests: {[key:string]: any} = {
 		return await this.testGetUserFollowingFeed();
 	},
 
-	async testGetFilmListPage() {
-		return await letterboxd.getFilmListPage({href:'/darrencb/list/letterboxds-top-250-horror-films'});
+	async testGetFilmList() {
+		return await letterboxd.getFilmList({href:'/darrencb/list/letterboxds-top-250-horror-films'});
 	},
 
-	async testGetFilmListDetailPage() {
-		return await letterboxd.getFilmListPage({href:'/darrencb/list/letterboxds-top-250-horror-films/detail'});
+	async testGetFilmListDetail() {
+		return await letterboxd.getFilmList({href:'/darrencb/list/letterboxds-top-250-horror-films/detail'});
 	},
 
-	async testGetFilmListDetailPageWithNotes() {
-		return await letterboxd.getFilmListPage({href:'/saffronmaeve/list/contours/detail'});
+	async testGetFilmListDetailWithNotes() {
+		return await letterboxd.getFilmList({href:'/saffronmaeve/list/contours/detail'});
 	},
 
 	async testGetSimilar() {
@@ -99,11 +99,11 @@ const tests: {[key:string]: any} = {
 	},
 
 	async testGetUserReviews() {
-		return await letterboxd.getFilmListPage({href:'/criterion/films/reviews'});
+		return await letterboxd.getFilmList({href:'/criterion/films/reviews'});
 	},
 
 	async testGetUserFilms() {
-		return await letterboxd.getFilmListPage({href:'/criterion/films'});
+		return await letterboxd.getFilmList({href:'/criterion/films'});
 	},
 };
 
