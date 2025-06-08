@@ -94,15 +94,15 @@ const tests: {[key:string]: any} = {
 		return await letterboxd.getSimilarFilms(opts);
 	},
 
-	async testGetRelated() {
+	async testGetRelatedFilms() {
 		return await letterboxd.getFilms({href:'/films/in/the-lord-of-the-rings-collection/by/release-earliest/size/large'});
 	},
 
-	async testGetUserReviews() {
+	async testGetUserReviewsAsList() {
 		return await letterboxd.getFilmList({href:'/criterion/films/reviews'});
 	},
 
-	async testGetUserFilms() {
+	async testGetUserFilmsAsList() {
 		return await letterboxd.getFilmList({href:'/criterion/films'});
 	},
 };
