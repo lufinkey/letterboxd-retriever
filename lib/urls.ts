@@ -3,16 +3,24 @@ import { stringifyHrefFilterProps } from './href';
 import { PosterSize } from './types';
 import {
 	FilmReviewsHrefArgs,
+	FilmsHrefArgs,
 	HrefFilterProps,
+	ListHrefArgs,
 	ReviewsHrefArgs,
+	SimilarToFilmHrefArgs,
+	TagFilmsHrefArgs,
 	TagReviewsHrefArgs,
 	UserFilmLikedReviewsHrefArgs,
 	UserFilmReviewsHrefArgs,
+	UserFilmsHrefArgs,
 	UserFriendsFilmReviewsHrefArgs,
 	UserFriendsTagReviewsHrefArgs,
+	UserLikedFilmsHrefArgs,
 	UserLikedReviewsHrefArgs,
 	UserReviewsHrefArgs,
-	UserTagReviewsHrefArgs
+	UserTagFilmsHrefArgs,
+	UserTagReviewsHrefArgs,
+	UserWatchlistHrefArgs
 } from './types/href';
 
 
@@ -249,17 +257,139 @@ export const reviewsURL = (opts: ReviewsHrefOptions): string => {
 
 
 
+// Films
+
+export type FilmsHrefOptions = (
+	{href: string}
+	// /films/
+	| (FilmsHrefArgs)
+	// /tag/<tagSlug>/films/
+	| ({tagSlug: string}
+		& TagFilmsHrefArgs)
+	// /<userSlug>/films/
+	| ({userSlug: string}
+		& UserFilmsHrefArgs)
+	// /film/<filmSlug>/similar/
+	| (
+		{
+			filmSlug: string;
+			similar: true;
+		} & SimilarToFilmHrefArgs
+	)
+	// /<userSlug>/watchlist/
+	| (
+		{
+			userSlug: string;
+			watchlist: true;
+		} & UserWatchlistHrefArgs
+	)
+	// /<userSlug>/likes/films/
+	| (
+		{
+			userSlug: string;
+			likes: true;
+		} & UserLikedFilmsHrefArgs
+	)
+	// /<userSlug>/tag/<tagSlug>/films/
+	| (
+		{
+			userSlug: string;
+			tagSlug: string;
+		} & UserTagFilmsHrefArgs
+	)
+	// /<userSlug>/friends/tag/<tagSlug>/films/
+	| (
+		{
+			userSlug: string;
+			friends: true;
+			tagSlug: string;
+		} & UserTagFilmsHrefArgs
+	)
+	// /<userSlug>/list/<listSlug>/
+	| (
+		{
+			userSlug: string;
+			listSlug: string;
+		} & ListHrefArgs
+	)
+);
+
+export const filmsHref = (opts: FilmsHrefOptions): string => {
+	if((opts as {href:string}).href != null) {
+		return (opts as {href:string}).href;
+	}
+	// create trailing href with filters
+	let hrefFilters = stringifyHrefFilterProps(opts as HrefFilterProps);
+	if(hrefFilters && !hrefFilters.endsWith('/')) {
+		hrefFilters += '/';
+	}
+	// stringify different href cases
+	const { userSlug, tagSlug, filmSlug, listSlug, watchlist, similar, friends, likes, detail, } = opts as {
+		userSlug: (string | undefined),
+		tagSlug: (string | undefined),
+		filmSlug: (string | undefined),
+		listSlug: (string | undefined),
+		watchlist: (true | undefined),
+		similar: (true | undefined),
+		friends: (true | undefined),
+		likes: (true | undefined),
+		detail: (boolean | undefined),
+	};
+	if(userSlug != null) {
+		if(listSlug != null) {
+			return `/${userSlug}/list/${listSlug}/${detail ? 'detail/' : ''}${hrefFilters}`;
+		} else if(tagSlug != null) {
+			if(friends) {
+				return `/${userSlug}/friends/tag/${tagSlug}/films/`;
+			} else {
+				return `/${userSlug}/tag/${tagSlug}/films/`;
+			}
+		} else {
+			if(watchlist) {
+				return `/${userSlug}/watchlist/${hrefFilters}`;
+			} else if(likes) {
+				return `/${userSlug}/likes/films/${hrefFilters}`;
+			} else {
+				return `/${userSlug}/films/${hrefFilters}`;
+			}
+		}
+	} else if(filmSlug != null) {
+		if(similar) {
+			return `/film/${filmSlug}/similar`;
+		} else {
+			throw new Error("Cannot get films from a film href");
+		}
+	} else if(tagSlug != null) {
+		return `/tag/${tagSlug}/films/${hrefFilters}`;
+	} else {
+		return `/films/${hrefFilters}`;
+	}
+};
+
+export const filmsURL = (opts: FilmsHrefOptions): string => {
+	return BASE_URL + filmsHref(opts);
+};
+
+
+
 // Similar Items
 
-export const similarItemsHref = (opts: FilmHrefOptions) => {
+export type SimilarToFilmHrefOptions = ({href: string} | ({filmSlug: string} & SimilarToFilmHrefArgs));
+
+export const similarItemsHref = (opts: SimilarToFilmHrefOptions) => {
 	let href = filmHref(opts);
 	if(!href.endsWith('/')) {
 		href += '/';
 	}
-	href += 'similar';
+	href += 'similar/';
+	let hrefFilters = stringifyHrefFilterProps(opts as HrefFilterProps);
+	if(hrefFilters && !hrefFilters.endsWith('/')) {
+		hrefFilters += '/';
+	}
+	href += hrefFilters;
 	return href;
 };
 
-export const similarItemsURL = (options: FilmHrefOptions) => {
+export const similarItemsURL = (options: SimilarToFilmHrefOptions) => {
 	return BASE_URL + similarItemsHref(options);
 };

@@ -8,12 +8,12 @@ console.log();
 testsToRun = testsToRun.map((testName) => testName.toLowerCase());
 
 const tests: {[key:string]: any} = {
-	async testGetFilmInfoWithTmdbID() {
-		return await letterboxd.getFilmInfo({tmdbId: "64122"});
+	async testGetFilmWithTmdbID() {
+		return await letterboxd.getFilm({tmdbId: "64122"});
 	},
 
-	async testGetFilmInfoWithTmdbID2() {
-		return await letterboxd.getFilmInfo({tmdbId:'1226578'});
+	async testGetFilmWithTmdbID2() {
+		return await letterboxd.getFilm({tmdbId:'1226578'});
 	},
 
 	async testGetFilmHrefFromExternalID() {
@@ -24,8 +24,8 @@ const tests: {[key:string]: any} = {
 		return await letterboxd.getFilmHrefFromExternalID({tmdbId:'2710'});
 	},
 
-	async testFailGetFilmInfo() {
-		return await letterboxd.getFilmInfo({tmdbId:'2710'});
+	async testFailGetFilm() {
+		return await letterboxd.getFilm({tmdbId:'2710'});
 	},
 
 	async testGetFriendsReviews() {
@@ -38,12 +38,12 @@ const tests: {[key:string]: any} = {
 		return await letterboxd.getReviews(opts);
 	},
 
-	async testGetFilmInfoWithSlug() {
-		return await letterboxd.getFilmInfo({filmSlug:'legend'});
+	async testGetFilmWithSlug() {
+		return await letterboxd.getFilm({filmSlug:'legend'});
 	},
 
-	async testGetFilmInfoWithHref() {
-		return await letterboxd.getFilmInfo({href:'/film/twisters'});
+	async testGetFilmWithHref() {
+		return await letterboxd.getFilm({href:'/film/twisters'});
 	},
 
 	userFollowingLastPage: (undefined as (letterboxd.ActivityFeedPage | undefined)),
@@ -95,7 +95,7 @@ const tests: {[key:string]: any} = {
 	},
 
 	async testGetRelated() {
-		return await letterboxd.getFilmsPage({href:'/films/in/the-lord-of-the-rings-collection/by/release-earliest/size/large'});
+		return await letterboxd.getFilms({href:'/films/in/the-lord-of-the-rings-collection/by/release-earliest/size/large'});
 	},
 
 	async testGetUserReviews() {
