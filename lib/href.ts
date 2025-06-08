@@ -22,7 +22,13 @@ import {
 	TagsTypesSet,
 	UserActivityType,
 	UserActivityTypesSet,
+	UserFilmLikesTypeSet,
 	UserFilmsHrefSubroutesSet,
+	UserFilmSubroute,
+	UserFilmSubroutesSet,
+	UserFilmViewingSubroutesSet,
+	UserFriendsFilmSubroute,
+	UserFriendsFilmSubroutesSet,
 	UserHrefBaseSlug,
 	UserLikesType,
 	UserLikesTypesSet,
@@ -550,7 +556,7 @@ export const parseHref = (href: string): HrefParts => {
 				case 'friends':
 					const friends: (true | undefined) = true;
 					userBase = hrefPieces[offset];
-					if(userBase != UserHrefBaseSlug.Tag) {
+					if(userBase != UserHrefBaseSlug.Tag && userBase != UserHrefBaseSlug.Film) {
 						throw new HrefParseError(
 							hrefPieces,
 							indexRef.index,
@@ -559,31 +565,110 @@ export const parseHref = (href: string): HrefParts => {
 						);
 					}
 					offset += 1;
-				case UserHrefBaseSlug.Tag: {
-					const tagSlug = hrefPieces[offset];
-					if(tagSlug === undefined) {
-						throw new HrefParseError(
-							hrefPieces,
-							indexRef.index,
-							offset,
-							"Missing tag slug"
-						);
+				case UserHrefBaseSlug.Tag:
+					if(userBase === UserHrefBaseSlug.Tag) {
+						const tagSlug = hrefPieces[offset];
+						if(tagSlug === undefined) {
+							throw new HrefParseError(
+								hrefPieces,
+								indexRef.index,
+								offset,
+								"Missing tag slug"
+							);
+						}
+						hrefParts = {
+							userSlug,
+							friends,
+							base: userBase,
+							tagSlug,
+						};
+						indexRef.index += (offset + 1);
+						const tagsType = hrefPieces[indexRef.index];
+						if(TagsTypesSet.has(tagsType as any)) {
+							(hrefParts as {tagsType?: TagsType}).tagsType = tagsType as TagsType;
+							indexRef.index += 1;
+						}
+						parseHrefFilterProps(hrefParts as HrefFilterProps, hrefPieces, indexRef);
+						return hrefParts;
 					}
-					hrefParts = {
-						userSlug,
-						friends,
-						base: userBase,
-						tagSlug,
-					};
-					indexRef.index += (offset + 1);
-					const tagsType = hrefPieces[indexRef.index];
-					if(TagsTypesSet.has(tagsType as any)) {
-						(hrefParts as {tagsType?: TagsType}).tagsType = tagsType as TagsType;
-						indexRef.index += 1;
+				case UserHrefBaseSlug.Film:
+					if(userBase === UserHrefBaseSlug.Film) {
+						const filmSlug = hrefPieces[offset];
+						if(filmSlug === undefined) {
+							throw new HrefParseError(
+								hrefPieces,
+								indexRef.index,
+								offset,
+								"Missing film slug"
+							);
+						}
+						hrefParts = {
+							userSlug,
+							friends,
+							base: userBase,
+							filmSlug,
+						};
+						indexRef.index += (offset + 1);
+						const subroute = hrefPieces[indexRef.index];
+						let viewingId: (number | undefined) = undefined;
+						if(friends ? UserFriendsFilmSubroutesSet.has(subroute as any) : UserFilmSubroutesSet.has(subroute as any)) {
+							if(!friends && subroute == UserFilmSubroute.Likes) {
+								const likesType = hrefPieces[indexRef.index+1];
+								if(UserFilmLikesTypeSet.has(likesType as any)) {
+									(hrefParts as {subroute?: string}).subroute = subroute;
+									(hrefParts as {likesType?: string}).likesType = likesType;
+									indexRef.index += 2;
+								}
+								else if(likesType !== undefined) {
+									throw new HrefParseError(
+										hrefPieces,
+										indexRef.index,
+										1,
+										"Unknown likes type"
+									);
+								} else {
+									(hrefParts as {viewingSubroute?: string}).viewingSubroute = subroute;
+									indexRef.index += 1;
+								}
+							} else {
+								(hrefParts as {subroute?: string}).subroute = subroute;
+								indexRef.index += 1;
+							}
+						} else if(subroute !== undefined) {
+							if(!friends) {
+								viewingId = Number.parseInt(subroute);
+								if(!Number.isNaN(viewingId)) {
+									(hrefParts as {viewingId: number}).viewingId = viewingId;
+									indexRef.index += 1;
+									const viewingSubroute = hrefPieces[indexRef.index];
+									if(UserFilmViewingSubroutesSet.has(subroute as any)) {
+										(hrefParts as {viewingSubroute?: string}).viewingSubroute = viewingSubroute;
+									}
+									else if(subroute !== undefined) {
+										throw new HrefParseError(
+											hrefPieces,
+											indexRef.index,
+											0,
+											"Unknown user film viewing subroute"
+										);
+									}
+								} else {
+									viewingId = undefined;
+								}
+							}
+						}
+						if(viewingId === undefined) {
+							parseHrefFilterProps(hrefParts as HrefFilterProps, hrefPieces, indexRef);
+						} else if(indexRef.index < hrefPieces.length) {
+							throw new HrefParseError(
+								hrefPieces,
+								indexRef.index,
+								0,
+								"Unknown user film subroute"
+							);
+						}
+						return hrefParts;
 					}
-					parseHrefFilterProps(hrefParts as HrefFilterProps, hrefPieces, indexRef);
-					return hrefParts;
-				}
 				default:
 					throw new HrefParseError(
 						hrefPieces,

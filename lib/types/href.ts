@@ -527,6 +527,7 @@ export enum UserHrefBaseSlug {
 	Stories = 'stories',
 	Activity = 'activity',
 	Films = 'films',
+	Film = 'film',
 	Watchlist = 'watchlist',
 	Lists = 'lists',
 	List = 'list',
@@ -581,20 +582,6 @@ export type UserFilmsHrefArgs = {
 	page?: number | `${number}`;
 };
 
-// /<userSlug>/stories/
-
-export type UserStoriesSortByFilter =
-	SortByFilter.Title
-	| SortByFilter.NewestPublished
-	| SortByFilter.OldestPublished
-	| SortByFilter.NewestUpdated
-	| SortByFilter.OldestUpdated;
-
-export type UserStoriesHrefArgs = {
-	by?: UserStoriesSortByFilter;
-	page?: number | `${number}`;
-};
-
 // /<userSlug>/films/diary/
 
 export type UserDiarySortByFilter =
@@ -621,6 +608,162 @@ export type UserReviewsHrefArgs = {
 	for?: number | `${number}`; // year
 	rated?: RatingFilter;
 	by?: UserReviewsSortByFilter; // default is by added (when reviewed)
+	page?: number | `${number}`;
+};
+
+// /<userSlug>/film/<filmSlug>/
+
+export enum UserFilmSubroute {
+	Activity = 'activity',
+	Diary = 'diary',
+	Reviews = 'reviews',
+	Lists = 'lists',
+	Likes = 'likes',
+}
+export const UserFilmSubroutes = Object.values(UserFilmSubroute);
+export const UserFilmSubroutesSet = new Set(UserFilmSubroutes);
+
+// /<userSlug>/film/<filmSlug>/1/
+
+export enum UserFilmViewingSubroute {
+	Likes = 'likes',
+}
+export const UserFilmViewingSubroutes = Object.values(UserFilmViewingSubroute);
+export const UserFilmViewingSubroutesSet = new Set(UserFilmViewingSubroutes);
+
+// /<userSlug>/film/<filmSlug>/diary/
+
+export type UserFilmDiarySortByFilter =
+	SortByFilter.NewestAdded
+	| SortByFilter.EarliestAdded
+	| SortByFilter.Activity
+	| SortByFilter.HighestEntryRating
+	| SortByFilter.LowestEntryRating;
+
+export type UserFilmDiaryHrefArgs = {
+	for?: number | `${number}`; // year
+	rated?: RatingFilter;
+	by?: UserFilmDiarySortByFilter;
+};
+
+// /<userSlug>/film/<filmSlug>/reviews/
+
+export type UserFilmReviewsSortByFilter =
+	SortByFilter.NewestAdded
+	| SortByFilter.EarliestAdded
+	| SortByFilter.Activity
+	| SortByFilter.HighestEntryRating
+	| SortByFilter.LowestEntryRating;
+
+export type UserFilmReviewsHrefArgs = {
+	rated?: RatingFilter; // year
+	by?: UserFilmReviewsSortByFilter;
+};
+
+// /<userSlug>/film/<filmSlug>/lists/
+
+export type UserFilmListsSortByFilter = ListsSortByFilter;
+
+export type UserFilmListsHrefArgs = {
+	by?: UserFilmListsSortByFilter;
+};
+
+// /<userSlug>/film/<filmSlug>/likes/
+
+export enum UserFilmLikesType {
+	Reviews = 'reviews',
+	Lists = 'lists',
+}
+export const UserFilmLikesTypes = Object.values(UserFilmLikesType);
+export const UserFilmLikesTypeSet = new Set(UserFilmLikesTypes);
+
+// /<userSlug>/film/<filmSlug>/likes/reviews/
+
+export type UserFilmLikedReviewsSortByFilter =
+	SortByFilter.NewestAdded
+	| SortByFilter.EarliestAdded
+	| SortByFilter.Activity
+	| SortByFilter.HighestEntryRating
+	| SortByFilter.LowestEntryRating;
+
+export type UserFilmLikedReviewsHrefArgs = {
+	rated?: RatingFilter;
+	by?: UserFilmLikedReviewsSortByFilter;
+};
+
+// /<userSlug>/film/<filmSlug>/likes/lists/
+
+export type UserFilmLikedListsSortByFilter = ListsSortByFilter;
+
+export type UserFilmLikedListsHrefArgs = {
+	by?: UserFilmLikedListsSortByFilter;
+};
+
+// /<userSlug>/friends/film/<filmSlug>/
+
+export enum UserFriendsFilmSubroute {
+	Fans = 'fans',
+	Likes = 'likes',
+	Reviews = 'reviews',
+	Lists = 'lists',
+}
+export const UserFriendsFilmSubroutes = Object.values(UserFriendsFilmSubroute);
+export const UserFriendsFilmSubroutesSet = new Set(UserFriendsFilmSubroutes);
+
+export type UserFriendsFilmMembersSortByFilter =
+	FilmMembersSortByFilter
+	| SortByFilter.HighestEntryRating
+	| SortByFilter.LowestEntryRating;
+
+export type UserFriendsFilmMembersHrefArgs = {
+	rated?: RatingFilter;
+	by?: UserFriendsFilmMembersSortByFilter
+};
+
+// /<userSlug>/friends/film/<filmSlug>/likes/
+
+export type UserFriendsFilmLikesSortByFilter =
+	FilmLikesSortByFilter
+	| SortByFilter.HighestMemberRating
+	| SortByFilter.LowestMemberRating;
+
+export type UserFriendsFilmLikesHrefArgs = {
+	by?: UserFriendsFilmLikesSortByFilter;
+};
+
+// /<userSlug>/friends/film/<filmSlug>/reviews/
+
+export type UserFriendsFilmReviewsSortByFilter =
+	SortByFilter.NewestAdded
+	| SortByFilter.EarliestAdded
+	| SortByFilter.Activity
+	| SortByFilter.HighestEntryRating
+	| SortByFilter.LowestEntryRating;
+
+export type UserFriendsFilmReviewsHrefArgs = {
+	rated?: RatingFilter;
+	by?: UserFriendsFilmReviewsSortByFilter;
+};
+
+// /<userSlug>/friends/film/<filmSlug>/lists/
+
+export type UserFriendsFilmListsSortByFilter = ListsSortByFilter;
+
+export type UserFriendsFilmListsHrefArgs = {
+	by?: UserFriendsFilmListsSortByFilter;
+};
+
+// /<userSlug>/stories/
+
+export type UserStoriesSortByFilter =
+	SortByFilter.Title
+	| SortByFilter.NewestPublished
+	| SortByFilter.OldestPublished
+	| SortByFilter.NewestUpdated
+	| SortByFilter.OldestUpdated;
+
+export type UserStoriesHrefArgs = {
+	by?: UserStoriesSortByFilter;
 	page?: number | `${number}`;
 };
 
@@ -970,6 +1113,53 @@ export type HrefParts = (
 					| ({subroute: UserFilmsHrefSubroute.Reviews;}
 						& UserReviewsHrefArgs)
 				))
+			// /<userSlug>/film/<filmSlug>/
+			| (
+				{
+					friends?: undefined;
+					base: UserHrefBaseSlug.Film;
+					filmSlug: string;
+				} & (
+					{viewingSubroute?: UserFilmViewingSubroute}
+					| ({subroute: UserFilmSubroute.Activity;})
+					| ({subroute: UserFilmSubroute.Diary;}
+						& UserFilmDiaryHrefArgs)
+					| ({subroute: UserFilmSubroute.Reviews;}
+						& UserFilmReviewsHrefArgs)
+					| ({subroute: UserFilmSubroute.Lists;}
+						& UserFilmListsHrefArgs)
+					| ({subroute: UserFilmSubroute.Likes;}
+						& (
+							({likesType: UserFilmLikesType.Reviews;}
+								& UserFilmLikedReviewsHrefArgs)
+							| ({likesType: UserFilmLikesType.Lists;}
+								& UserFilmLikedListsHrefArgs)
+						)
+					)
+					| ({
+						viewingId: number | `${number}`
+						viewingSubroute?: UserFilmViewingSubroute;
+					})
+				)
+			)
+			// /<userSlug>/friends/film/<filmSlug>/
+			| (
+				{
+					friends: true;
+					base: UserHrefBaseSlug.Film;
+					filmSlug: string;
+				} & (
+					({subroute?: undefined}
+						& UserFriendsFilmMembersHrefArgs)
+					| ({subroute: UserFriendsFilmSubroute.Fans})
+					| ({subroute: UserFriendsFilmSubroute.Likes}
+						& UserFriendsFilmLikesHrefArgs)
+					| ({subroute: UserFriendsFilmSubroute.Reviews}
+						& UserFriendsFilmReviewsHrefArgs)
+					| ({subroute: UserFriendsFilmSubroute.Lists}
+						& UserFriendsFilmListsHrefArgs)
+				)
+			)
 			// /<userSlug>/stories/
 			| ({base: UserHrefBaseSlug.Stories}
 				& UserStoriesHrefArgs)
@@ -992,8 +1182,10 @@ export type HrefParts = (
 				} & ListHrefArgs)
 			)
 			// /<userSlug>/likes/
-			| ({base: UserHrefBaseSlug.Likes;}
-				& (
+			| (
+				{
+					base: UserHrefBaseSlug.Likes;
+				} & (
 					{likesType?: undefined}
 					| ({likesType: UserLikesType.Films}
 						& UserLikedFilmsHrefArgs)
@@ -1004,8 +1196,10 @@ export type HrefParts = (
 				)
 			)
 			// /<userSlug>/tags/
-			| ({base: UserHrefBaseSlug.Tags;}
-				& (
+			| (
+				{
+					base: UserHrefBaseSlug.Tags;
+				} & (
 					({tagsType?: (TagsType.Films | undefined);}
 						& UserTagsHrefArgs)
 					| ({tagsType: TagsType.Diary;}
