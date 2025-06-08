@@ -27,7 +27,6 @@ import {
 	UserFilmSubroute,
 	UserFilmSubroutesSet,
 	UserFilmViewingSubroutesSet,
-	UserFriendsFilmSubroute,
 	UserFriendsFilmSubroutesSet,
 	UserHrefBaseSlug,
 	UserLikesType,
