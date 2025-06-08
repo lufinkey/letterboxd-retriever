@@ -94,7 +94,7 @@ export type FilmPageData = {
 	popularReviews: Viewing[];
 };
 
-export type FilmInfo = {
+export type FilmPage = {
 	pageData: FilmPageData;
 	ldJson: FilmLDJson;
 };

@@ -2,7 +2,7 @@
 import * as cheerio from 'cheerio';
 import {
 	Film,
-	FilmInfo,
+	FilmPage,
 	ActivityFeedPage,
 	ReviewsPage,
 	PosterSize,
@@ -43,7 +43,7 @@ export type GetFilmOptions = (FilmURLOptions | {tmdbId: string} | {imdbId: strin
 	relatedFilmsPosterSize?: PosterSize;
 };
 
-export const getFilm = async (options: GetFilmOptions): Promise<FilmInfo> => {
+export const getFilm = async (options: GetFilmOptions): Promise<FilmPage> => {
 	let url: string;
 	if('filmSlug' in options && options.filmSlug) {
 		url = lburls.filmPageURLFromSlug(options.filmSlug);
