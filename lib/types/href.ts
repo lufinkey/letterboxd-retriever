@@ -1124,7 +1124,6 @@ export type HrefParts = (
 			// /<userSlug>/film/<filmSlug>/
 			| (
 				{
-					friends?: undefined;
 					base: UserHrefBaseSlug.Film;
 					filmSlug: string;
 				} & (
@@ -1221,7 +1220,6 @@ export type HrefParts = (
 			// /<userSlug>/tag/<tagSlug>/
 			| (
 				{
-					friends?: undefined;
 					base: UserHrefBaseSlug.Tag;
 					tagSlug: string;
 				} & (
