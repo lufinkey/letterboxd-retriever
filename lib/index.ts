@@ -11,11 +11,12 @@ import {
 	letterboxdPageError,
 	FilmListPage
 } from './types';
+import * as lbconstants from './constants';
 import * as lburls from './urls';
 import * as lbparse from './parser';
 
 export * from './types';
-export { BASE_URL } from './urls';
+export { HOST, BASE_URL } from './constants';
 
 const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Response> => {
 	const res = await fetch(url, options);
@@ -213,7 +214,7 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	const res = await sendHttpRequest(feedAjaxURL, {
 		referrer: feedPageURL,
 		headers: {
-			'Host': lburls.HOST
+			'Host': lbconstants.HOST
 		}
 	});
 	const resData = await res.text();

@@ -1,7 +1,5 @@
+import { BASE_URL } from './constants';
 import { PosterSize } from './types';
-
-export const HOST = 'letterboxd.com';
-export const BASE_URL = `https://${HOST}`;
 
 export interface PersonalActivityFeedOptions {
 	diaryEntries?: boolean;
