@@ -891,7 +891,7 @@ export const parseAjaxHrefFromFilmsPage = ($: cheerio.CheerioAPI): string | unde
 
 // Film List
 
-export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmListPage => {
+export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmListPage | null) => {
 	let $: cheerio.CheerioAPI;
 	if(typeof(pageData) === 'string') {
 		$ = cheerio.load(pageData);
@@ -965,7 +965,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 			const id = objectIdParts ? objectIdParts[1] : undefined;
 			// parse owner rating
 			const ownerRatingStr = elementTag.attr('data-owner-rating');
-			let ownerRating: number | string | undefined = ownerRatingStr != null ? Number.parseInt(ownerRatingStr) : undefined;
+			let ownerRating: number | string | undefined = (ownerRatingStr != null) ? Number.parseInt(ownerRatingStr) : undefined;
 			if(ownerRating == null) {
 				ownerRating = ownerRatingStr;
 			}
@@ -1045,7 +1045,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): FilmLi
 		}
 	} else {
 		if((!title || !gotTitleFromTag) && !publishedAt && !updatedAt) {
-			throw new Error("No film or viewing list found");
+			return null;
 		}
 		console.error("No film or viewing list found");
 	}

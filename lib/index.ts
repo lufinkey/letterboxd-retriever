@@ -320,7 +320,22 @@ export const getFilmList = async (options: GetFilmListOptions): Promise<FilmList
 	const url = lburls.filmListURL(options);
 	const res = await sendHttpRequest(url);
 	const resData = await res.text();
-	const page = lbparse.parseFilmListPage(resData);
+	const $ = cheerio.load(resData);
+	let page = lbparse.parseFilmListPage($);
+	if(!page) {
+		// check if page should be parsed from an ajax call
+		const ajaxHref = lbparse.parseAjaxHrefFromFilmsPage($);
+		if(ajaxHref) {
+			// fetch ajax page
+			const ajaxUrl = lburls.urlFromHref(ajaxHref);
+			const ajaxRes = await sendHttpRequest(ajaxUrl);
+			const ajaxResData = await ajaxRes.text();
+			page = lbparse.parseFilmListPage(`<body id="root">${ajaxResData}</body>`);
+		}
+	}
+	if(!page) {
+		throw new Error(`Invalid film list`);
+	}
 	// fetch ajax content if needed
 	if((options.includeAjaxContent ?? true) && (page.items?.length ?? 0) > 0) {
 		await fetchFilmPostersForItems(page.items, (item, callback) => callback(item.film), {posterSize:options.posterSize});
