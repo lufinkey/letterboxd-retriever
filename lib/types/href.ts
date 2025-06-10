@@ -1,22 +1,31 @@
 
 // Filters
 
-export enum PopularityReferenceTime {
-	This = 'this'
+export enum PopularType {
+	This = 'this',
+	With = 'with',
 }
-export const PopularityReferenceTimes = Object.values(PopularityReferenceTime);
+export const PopularTypes = Object.values(PopularType);
 
-export enum PopularityTimeSpan {
+export enum PopularTimeSpan {
 	Year = 'year',
 	Month = 'month',
 	Week = 'week',
 }
-export const PopularityTimeSpans = Object.values(PopularityTimeSpan);
+export const PopularTimeSpans = Object.values(PopularTimeSpan);
+
+export enum PopularGroup {
+	Friends = 'friends',
+}
+export const PopularGroups = Object.values(PopularGroup);
 
 export type PopularFilterProps = {
-	refTime: PopularityReferenceTime;
-	span: PopularityTimeSpan;
-}
+	type: PopularType.This;
+	value: PopularTimeSpan;
+} | {
+	type: PopularType.With;
+	value: PopularGroup;
+};
 
 export type PopularFilter = true | PopularFilterProps;
 

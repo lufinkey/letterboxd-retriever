@@ -18,8 +18,8 @@ import {
 	OtherPageSlugs,
 	PopularFilter,
 	PopularFilterProps,
-	PopularityReferenceTime,
-	PopularityTimeSpan,
+	PopularType,
+	PopularTimeSpan,
 	RoleFilter,
 	RoleSlug,
 	SearchTypeSlug,
@@ -36,6 +36,7 @@ import {
 	UserHrefBaseSlug,
 	UserLikesType,
 	UserLikesTypesSet,
+	PopularGroup,
 } from './types/href';
 
 
@@ -62,27 +63,48 @@ const parseHrefPopularFilterValuePieces = (
 	indexRef: IndexRef,
 	offset: number,
 ): PopularFilter => {
-	const refTime = hrefPieces[indexRef.index+offset];
-	switch(refTime) {
-		case PopularityReferenceTime.This: {
-			const span = hrefPieces[indexRef.index+offset+1];
-			switch(span) {
-				case PopularityTimeSpan.Year:
-				case PopularityTimeSpan.Month:
-				case PopularityTimeSpan.Week: {
+	const type = hrefPieces[indexRef.index+offset];
+	switch(type) {
+		case PopularType.This: {
+			const value = hrefPieces[indexRef.index+offset+1];
+			switch(value) {
+				case PopularTimeSpan.Year:
+				case PopularTimeSpan.Month:
+				case PopularTimeSpan.Week: {
 					indexRef.index += (offset + 2);
 					return {
-						refTime,
-						span,
+						type,
+						value,
 					};
-				} return true;
+				}
 
 				default:
 					throw new HrefParseError(
 						hrefPieces,
 						indexRef.index,
 						offset + 1,
-						"Invalid popularity time span"
+						"Invalid popular time span"
+					);
+			}
+		}
+
+		case PopularType.With: {
+			const value = hrefPieces[indexRef.index+offset+1];
+			switch(value) {
+				case PopularGroup.Friends: {
+					indexRef.index += (offset + 2);
+					return {
+						type,
+						value,
+					};
+				}
+
+				default:
+					throw new HrefParseError(
+						hrefPieces,
+						indexRef.index,
+						offset + 1,
+						"Invalid popular time span"
 					);
 			}
 		}
@@ -92,12 +114,7 @@ const parseHrefPopularFilterValuePieces = (
 			return true;
 		}
 	}
-	throw new HrefParseError(
-		hrefPieces,
-		indexRef.index,
-		offset,
-		"Invalid popularity reference time"
-	);
+	throw new Error("Invalid popular in href");
 };
 
 const parseHrefRoleFilterValuePieces = (
@@ -251,7 +268,7 @@ export const stringifyHrefFilterProps = (hrefParts: HrefFilterProps): string => 
 						hrefPieces.push(slug);
 						if(typeof val !== 'boolean') {
 							const popular = (val as PopularFilterProps);
-							hrefPieces.push(popular.refTime, popular.span);
+							hrefPieces.push(popular.type, popular.value);
 						}
 					}
 				} break;
