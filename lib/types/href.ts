@@ -1018,6 +1018,7 @@ export type HrefBaseSlug = HrefBaseMediaPageSlug | RoleSlug | OtherPageSlug
 export type ListHrefParts =
 	{
 		userSlug: string;
+		base: UserHrefBaseSlug.List;
 		listSlug: string;
 	}
 	& ListHrefArgs;
