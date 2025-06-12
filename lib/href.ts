@@ -65,48 +65,14 @@ const parseHrefPopularFilterValuePieces = (
 ): PopularFilter => {
 	const type = hrefPieces[indexRef.index+offset];
 	switch(type) {
-		case PopularType.This: {
-			const value = hrefPieces[indexRef.index+offset+1];
-			switch(value) {
-				case PopularTimeSpan.Year:
-				case PopularTimeSpan.Month:
-				case PopularTimeSpan.Week: {
-					indexRef.index += (offset + 2);
-					return {
-						type,
-						value,
-					};
-				}
-
-				default:
-					throw new HrefParseError(
-						hrefPieces,
-						indexRef.index,
-						offset + 1,
-						"Invalid popular time span"
-					);
-			}
-		}
-
+		case PopularType.This:
 		case PopularType.With: {
 			const value = hrefPieces[indexRef.index+offset+1];
-			switch(value) {
-				case PopularGroup.Friends: {
-					indexRef.index += (offset + 2);
-					return {
-						type,
-						value,
-					};
-				}
-
-				default:
-					throw new HrefParseError(
-						hrefPieces,
-						indexRef.index,
-						offset + 1,
-						"Invalid popular time span"
-					);
-			}
+			indexRef.index += (offset + 2);
+			return {
+				type,
+				value: value as any,
+			};
 		}
 
 		default: {
@@ -303,8 +269,10 @@ export const parseHref = (href: string): HrefParts => {
 				throw new Error(`Invalid url host ${host}`);
 			}
 			href = href.substring(slashIndex);
+		} else if(href == HOST) {
+			href = '/';
 		} else {
-			throw new Error("Invalid film list URL");
+			throw new Error("Invalid letterboxd URL");
 		}
 	}
 	// ensure href is a real href
