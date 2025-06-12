@@ -16,6 +16,7 @@ import * as lburls from './urls';
 import * as lbparse from './parser';
 
 export * from './types';
+export { parseHref } from './href';
 export { HOST, BASE_URL } from './constants';
 
 
