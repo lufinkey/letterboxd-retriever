@@ -89,7 +89,7 @@ export enum GenreSlug {
 
 export type ExcludeGenreSlug = `-${GenreSlug}`;
 export type IncludeGenreSlug = `+${GenreSlug}`;
-export type AnyGenreSlug = (GenreSlug | IncludeGenreSlug | ExcludeGenreSlug);
+export type AnyGenreSlug = (GenreSlug | ExcludeGenreSlug);
 export type GenreSlugArray = AnyGenreSlug[];
 export type GenreFilter = GenreSlugArray | AnyGenreSlug;
 
@@ -1015,6 +1015,13 @@ export enum HrefBaseMediaPageSlug {
 
 export type HrefBaseSlug = HrefBaseMediaPageSlug | RoleSlug | OtherPageSlug
 
+export type ListHrefParts =
+	{
+		userSlug: string;
+		listSlug: string;
+	}
+	& ListHrefArgs;
+
 export type HrefParts = (
 	// /film/<filmSlug>/
 	(
@@ -1191,12 +1198,8 @@ export type HrefParts = (
 			| ({base: UserHrefBaseSlug.Lists;}
 				& UserListsHrefArgs)
 			// /<userSlug>/list/<listSlug>/
-			| (
-				({
-					base: UserHrefBaseSlug.List;
-					listSlug: string;
-				} & ListHrefArgs)
-			)
+			| ({base: UserHrefBaseSlug.List;}
+				& ListHrefParts)
 			// /<userSlug>/likes/
 			| (
 				{
@@ -1272,7 +1275,8 @@ export type HrefParts = (
 		)
 	)
 ) | {
-	root: true
+	root: true;
+	base?: undefined;
 };
 
 
