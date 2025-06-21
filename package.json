@@ -10,7 +10,7 @@
 	},
 	"scripts": {
 		"test": "npm run build && node dist/lib/test.js",
-		"build": "npx tsc",
+		"build": "tsc",
 		"lint": "eslint . --ext .ts",
 		"prepare": "npm run build"
 	},
