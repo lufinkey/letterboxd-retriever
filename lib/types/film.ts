@@ -74,7 +74,7 @@ export type FilmPageData = {
 	slug: string;
 	type: 'film';
 	name: string;
-	year: string;
+	year: string | number;
 	tagline: string;
 	description: string;
 	tmdb?: {

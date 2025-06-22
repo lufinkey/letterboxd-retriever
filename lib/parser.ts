@@ -146,12 +146,17 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		relatedFilms = parseRelatedFilmsContainer(relatedFilmsContainer, $);
 	}
 	// create film info
+	const yearString = $('section.production-masthead .productioninfo .releasedate').text()?.trim()
+	let year: (number | undefined) = Number.parseInt(yearString)
+	if (`${year}` != yearString) {
+		year = undefined
+	}
 	return {
 		id: backdropTag.attr('data-film-id')!,
 		slug: backdropTag.attr('data-film-slug')!,
 		type: body.attr('data-type') as any,
-		name: $('section.film-header-group .filmtitle').text()?.trim(),
-		year: $('section.film-header-group .releaseyear').text()?.trim(),
+		name: $('section.production-masthead .primaryname .name').text()?.trim(),
+		year: year!,
 		tagline: $('section .review.body-text .tagline').text(),
 		description: $('section .review.body-text div > p').toArray().map((p) => $(p).text()).join("\n"),
 		tmdb: tmdbUrl ? {
