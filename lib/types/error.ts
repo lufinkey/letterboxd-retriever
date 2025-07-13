@@ -1,7 +1,7 @@
 
 export type ErrorCode_Http = `LETTERBOXD:HTTP${number}`;
-export type ErrorCode_ErrorPage = 'LETTERBOXD:ERRORPAGE';
-export type ErrorCode = ErrorCode_Http | ErrorCode_ErrorPage;
+export const ErrorCode_ErrorPage = 'LETTERBOXD:ERRORPAGE';
+export type ErrorCode = ErrorCode_Http | typeof ErrorCode_ErrorPage;
 
 export type LetterboxdError = Error & {
 	code: ErrorCode;
@@ -11,11 +11,11 @@ export type LetterboxdError = Error & {
 };
 
 export const letterboxdHttpError = (url: string, res: Response): LetterboxdError => {
-	const lbError = new Error(res.statusText) as LetterboxdError;
-	lbError.code = `LETTERBOXD:HTTP${res.status}`;
-	lbError.url = url;
-	lbError.httpResponse = res;
-	return lbError;
+	const error = new Error(res.statusText) as LetterboxdError;
+	error.code = `LETTERBOXD:HTTP${res.status}`;
+	error.url = url;
+	error.httpResponse = res;
+	return error;
 };
 
 export const letterboxdPageError = (errorPage: ErrorPage, url: string, res: Response) => {
@@ -23,16 +23,17 @@ export const letterboxdPageError = (errorPage: ErrorPage, url: string, res: Resp
 	let errorCode: ErrorCode;
 	if(res.status && res.status >= 200 && res.status < 300) {
 		errorMessage = errorPage.title || "Unknown error";
-		errorCode = `LETTERBOXD:ERRORPAGE`;
+		errorCode = ErrorCode_ErrorPage;
 	} else {
 		errorMessage = errorPage.title || res.statusText;
 		errorCode = `LETTERBOXD:HTTP${res.status}`;
 	}
-	const lbError = new Error(errorMessage) as LetterboxdError;
-	lbError.url = url;
-	lbError.httpResponse = res;
-	lbError.description = errorPage.description;
-	return lbError;
+	const error = new Error(errorMessage) as LetterboxdError;
+	error.code = errorCode;
+	error.url = url;
+	error.httpResponse = res;
+	error.description = errorPage.description;
+	return error;
 };
 
 export type ErrorPage = {
