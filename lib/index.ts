@@ -26,11 +26,7 @@ const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Resp
 	const res = await fetch(url, options);
 	if(!res.ok) {
 		res.body?.cancel();
-		throw letterboxdHttpError({
-			url,
-			statusCode: res.status,
-			message: res.statusText
-		});
+		throw letterboxdHttpError(url, res);
 	}
 	return res;
 };
@@ -66,7 +62,7 @@ export const getFilm = async (options: GetFilmOptions): Promise<FilmPage> => {
 	if(!ldJson && !pageData.name && !pageData.year) {
 		const errorPage = lbparse.parseErrorPage($);
 		if(errorPage.title) {
-			throw letterboxdPageError(errorPage);
+			throw letterboxdPageError(errorPage, url, res);
 		} else {
 			throw new Error("Invalid film page");
 		}
