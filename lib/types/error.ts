@@ -21,7 +21,7 @@ export const letterboxdHttpError = (url: string, res: Response): LetterboxdError
 export const letterboxdPageError = (errorPage: ErrorPage, url: string, res: Response) => {
 	let errorMessage: string;
 	let errorCode: ErrorCode;
-	if(res.status && res.status >= 200 && res.status < 300) {
+	if(res.status >= 200 && res.status < 300) {
 		errorMessage = errorPage.title || "Unknown error";
 		errorCode = ErrorCode_ErrorPage;
 	} else {
