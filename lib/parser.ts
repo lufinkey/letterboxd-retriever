@@ -491,6 +491,10 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 			end = true;
 			break;
 		}
+		if (node$.hasClass('no-activity-message')) {
+			end = true;
+			break;
+		}
 		let userDisplayName: string | undefined;
 		let actionTypes: ActivityActionType[] | undefined;
 		let film: Film | undefined = undefined;

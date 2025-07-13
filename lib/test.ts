@@ -105,6 +105,10 @@ const tests: {[key:string]: any} = {
 	async testGetUserFilmsAsList() {
 		return await letterboxd.getFilmList({href:'/criterion/films'});
 	},
+
+	async testJawaiiActivity() {
+		return await letterboxd.getUserFollowingFeed('jawaii');
+	},
 };
 
 (async () => {
