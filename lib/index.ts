@@ -22,13 +22,19 @@ export { HOST, BASE_URL } from './constants';
 
 // base methods
 
-const sendHttpRequest = async (url: string, options?: RequestInit): Promise<Response> => {
+const sendHttpRequest = async (url: string, options?: RequestInit): Promise<{res: Response, data: string}> => {
 	const res = await fetch(url, options);
-	if(!res.ok) {
-		res.body?.cancel();
-		throw letterboxdHttpError(url, res);
+	let data;
+	if(res.ok) {
+		data = await res.text();
+	} else {
+		try {
+			data = await res.text();
+		} catch(error) {
+			throw letterboxdHttpError(url, res);
+		}
 	}
-	return res;
+	return {res,data};
 };
 
 
@@ -54,8 +60,7 @@ export const getFilm = async (options: GetFilmOptions): Promise<FilmPage> => {
 	} else {
 		throw new Error(`No slug, href, or id was provided`);
 	}
-	const res = await sendHttpRequest(url);
-	const resData = await res.text();
+	const {res,data:resData} = await sendHttpRequest(url);
 	const $ = cheerio.load(resData);
 	const ldJson = lbparse.parseLdJson($);
 	const pageData = lbparse.parseFilmPage($);
@@ -93,7 +98,7 @@ export const getFilmHrefFromExternalID = async (options: GetFilmFromExternalIDOp
 	} else {
 		throw new Error(`No external id was provided`);
 	}
-	const res = await sendHttpRequest(url, {
+	const {res} = await sendHttpRequest(url, {
 		method: 'HEAD'
 	});
 	const filmHref = lburls.hrefFromURL(res.url);
@@ -141,8 +146,7 @@ export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film
 	}
 	const url = lburls.filmPosterURL(posterOpts as lburls.FilmPosterURLOptions);
 	//console.log(`fetching poster from url ${url}`);
-	const res = await sendHttpRequest(url);
-	const resData = await res.text();
+	const {res,data:resData} = await sendHttpRequest(url);
 	return lbparse.parseFilmPosterPage(resData);
 };
 
@@ -205,8 +209,7 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 	// fetch csrf if needed
 	let csrf: string | null | undefined = options.csrf;
 	if(!csrf) {
-		const res = await sendHttpRequest(feedPageURL);
-		const resData = await res.text();
+		const {res,data:resData} = await sendHttpRequest(feedPageURL);
 		csrf = lbparse.parseCSRF(resData);
 		if(!csrf) {
 			throw new Error("Failed to fetch CSRF");
@@ -218,13 +221,12 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 		username: username,
 		csrf: csrf
 	});
-	const res = await sendHttpRequest(feedAjaxURL, {
+	const {res,data:resData} = await sendHttpRequest(feedAjaxURL, {
 		referrer: feedPageURL,
 		headers: {
 			'Host': lbconstants.HOST
 		}
 	});
-	const resData = await res.text();
 	//console.log(resData);
 	const result = lbparse.parseAjaxActivityFeed(resData);
 	// fetch ajax content if needed
@@ -252,8 +254,7 @@ export type GetReviewsOptions = lburls.ReviewsHrefOptions;
 
 export const getReviews = async (options: GetReviewsOptions): Promise<ReviewsPage> => {
 	const url = lburls.reviewsURL(options);
-	const res = await sendHttpRequest(url);
-	const resData = await res.text();
+	const {res,data:resData} = await sendHttpRequest(url);
 	return lbparse.parseViewingListPage(resData);
 };
 
@@ -268,8 +269,7 @@ export type GetFilmsOptions = lburls.FilmsHrefOptions & {
 
 export const getFilms = async (options: GetFilmsOptions): Promise<FilmsPage> => {
 	const url = lburls.filmsURL(options);
-	const res = await sendHttpRequest(url);
-	const resData = await res.text();
+	const {res,data:resData} = await sendHttpRequest(url);
 	const $ = cheerio.load(resData);
 	let page = lbparse.parseFilmsPage($);
 	if(!page?.items || page.items.length == 0) {
@@ -278,8 +278,7 @@ export const getFilms = async (options: GetFilmsOptions): Promise<FilmsPage> => 
 		if(ajaxHref) {
 			// fetch ajax page
 			const ajaxUrl = lburls.urlFromHref(ajaxHref);
-			const ajaxRes = await sendHttpRequest(ajaxUrl);
-			const ajaxResData = await ajaxRes.text();
+			const {res:ajaxRes, data:ajaxResData} = await sendHttpRequest(ajaxUrl);
 			page = lbparse.parseFilmsPage(`<body id="root">${ajaxResData}</body>`);
 		}
 	}
@@ -315,8 +314,7 @@ export type GetFilmListOptions = lburls.FilmListHrefOptions & {
 
 export const getFilmList = async (options: GetFilmListOptions): Promise<FilmListPage> => {
 	const url = lburls.filmListURL(options);
-	const res = await sendHttpRequest(url);
-	const resData = await res.text();
+	const {res,data:resData} = await sendHttpRequest(url);
 	const $ = cheerio.load(resData);
 	let page = lbparse.parseFilmListPage($);
 	if(!page) {
@@ -325,8 +323,7 @@ export const getFilmList = async (options: GetFilmListOptions): Promise<FilmList
 		if(ajaxHref) {
 			// fetch ajax page
 			const ajaxUrl = lburls.urlFromHref(ajaxHref);
-			const ajaxRes = await sendHttpRequest(ajaxUrl);
-			const ajaxResData = await ajaxRes.text();
+			const {res:ajaxRes,data:ajaxResData} = await sendHttpRequest(ajaxUrl);
 			page = lbparse.parseFilmListPage(`<body id="root">${ajaxResData}</body>`);
 		}
 	}
