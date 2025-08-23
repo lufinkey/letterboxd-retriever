@@ -14,6 +14,7 @@ import {
 import * as lbconstants from './constants';
 import * as lburls from './urls';
 import * as lbparse from './parser';
+import { parseHref } from './href';
 
 export * from './types';
 export { parseHref } from './href';
@@ -70,6 +71,31 @@ export const getFilm = async (options: GetFilmOptions): Promise<FilmPage> => {
 			throw letterboxdPageError(errorPage, url, res);
 		} else {
 			throw new Error("Invalid film page");
+		}
+	}
+	// add slug if it wasn't parsed
+	if(!pageData.slug) {
+		console.warn(`Slug wasn't parsed for film page ${JSON.stringify(options)}`);
+		pageData.slug = (options as {filmSlug: string}).filmSlug;
+		if(pageData.slug) {
+			if(!pageData.type) {
+				pageData.type = 'film';
+			}
+		} else {
+			const href = (options as {href: string}).href;
+			if(href) {
+				try {
+					const hrefParts = parseHref(href);
+					pageData.slug = (hrefParts as {filmSlug: string}).filmSlug;
+					if(pageData.slug) {
+						if(!pageData.type) {
+							pageData.type = 'film';
+						}
+					}
+				} catch(error) {
+					console.error(error);
+				}
+			}
 		}
 	}
 	// fetch ajax content if needed

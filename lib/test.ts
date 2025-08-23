@@ -9,7 +9,7 @@ testsToRun = testsToRun.map((testName) => testName.toLowerCase());
 
 const tests: {[key:string]: any} = {
 	async testGetFilmWithTmdbID() {
-		return await letterboxd.getFilm({tmdbId: "64122"});
+		return await letterboxd.getFilm({tmdbId: "11976"});
 	},
 
 	async testGetFilmWithTmdbID2() {

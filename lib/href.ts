@@ -257,6 +257,8 @@ export const stringifyHrefFilterProps = (hrefParts: HrefFilterProps): string => 
 	return hrefPieces.join('/');
 };
 
+
+
 export const parseHref = (href: string): HrefParts => {
 	// parse out url prefix if needed
 	let schemeIndex = href.indexOf('://');

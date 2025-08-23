@@ -58,7 +58,7 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 	}
 	const body = $('body');
 	const backdropTag = $('#backdrop');
-	const posterTag = $('#poster-modal .film-poster');
+	const posterModal = $('#poster-modal');
 	// parse reviews
 	let popularReviews: Viewing[] = [];
 	for(const reviewElement of $('ul.film-popular-review > li')) {
@@ -153,8 +153,8 @@ export const parseFilmPage = (pageData: cheerio.CheerioAPI | string): FilmPageDa
 		year = undefined
 	}
 	return {
-		id: posterTag.attr('data-film-id')!,
-		slug: posterTag.attr('data-film-slug')!,
+		id: posterModal.find(' [data-film-id]').attr('data-film-id')!,
+		slug: posterModal.find(' [data-item-slug]').attr('data-item-slug')!,
 		type: body.attr('data-type') as any,
 		name: $('section.production-masthead .primaryname .name').text()?.trim(),
 		year: year!,
