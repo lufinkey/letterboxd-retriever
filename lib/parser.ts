@@ -305,6 +305,17 @@ export const parsePagination = ($: cheerio.CheerioAPI): Pagination => {
 	};
 };
 
+export const parseYearFromFullFilmTitle = (fullFilmTitle: string | undefined) => {
+	if(!fullFilmTitle || !fullFilmTitle.endsWith(')')) {
+		return undefined;
+	}
+	const parenthStart = fullFilmTitle.lastIndexOf('(');
+	if(parenthStart == -1) {
+		return undefined;
+	}
+	return fullFilmTitle.substring(parenthStart+1, fullFilmTitle.length-1);
+};
+
 
 
 // Film Poster
@@ -396,16 +407,11 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 	let year = posterTag.attr('data-film-release-year');
 	if(!year) {
 		const fullFilmTitle = posterTag.find('span[title]').attr('title');
-		if(fullFilmTitle && fullFilmTitle.endsWith(')')) {
-			const parenthStart = fullFilmTitle.lastIndexOf('(');
-			if(parenthStart != -1) {
-				year = fullFilmTitle.substring(parenthStart+1, fullFilmTitle.length-1);
-			}
-		}
+		year = parseYearFromFullFilmTitle(fullFilmTitle);
 	}
 	return {
 		id: posterTag.attr('data-film-id'),
-		type: type ?? 'film',
+		type: type || 'film',
 		href: href!,
 		imageURL: parseCacheBusterURL(imgTag.attr('src'), 'v'),
 		slug: slug!,
@@ -875,10 +881,27 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 	}
 	// parse films
 	const items: Film[] = [];
-	const filmGridItems = $('ul.poster-list > li');
+	const filmGridItems = $('.poster-grid ul.grid > li');
 	for(const element of filmGridItems) {
-		const film = parseFilmPosterContainer($(element));
-		items.push(film);
+		const dataItem = $(element).find(' [data-item-slug]');
+		const dataItemPosteredId = dataItem.attr('data-postered-identifier');
+		let type: string | undefined;
+		if(dataItemPosteredId) {
+			try {
+				const postededId = JSON.parse(dataItemPosteredId);
+				type = postededId.type;
+			} catch(error) {
+				console.error(`Failed to parse postered id: ${dataItemPosteredId}`);
+			}
+		}
+		items.push({
+			id: dataItem.attr('data-film-id'),
+			href: dataItem.attr('data-item-link')!,
+			slug: dataItem.attr('data-item-slug')!,
+			type: type || 'film',
+			name: (dataItem.attr('data-item-name') || dataItem.find('img').attr('alt'))!,
+			year: parseYearFromFullFilmTitle(dataItem.attr('data-item-full-display-name')),
+		});
 	}
 	// parse pagination
 	const pagination = parsePagination($);
