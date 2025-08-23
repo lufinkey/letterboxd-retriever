@@ -883,25 +883,8 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 	const items: Film[] = [];
 	const filmGridItems = $('.poster-grid ul.grid > li');
 	for(const element of filmGridItems) {
-		const dataItem = $(element).find(' [data-item-slug]');
-		const dataItemPosteredId = dataItem.attr('data-postered-identifier');
-		let type: string | undefined;
-		if(dataItemPosteredId) {
-			try {
-				const postededId = JSON.parse(dataItemPosteredId);
-				type = postededId.type;
-			} catch(error) {
-				console.error(`Failed to parse postered id: ${dataItemPosteredId}`);
-			}
-		}
-		items.push({
-			id: dataItem.attr('data-film-id'),
-			href: dataItem.attr('data-item-link')!,
-			slug: dataItem.attr('data-item-slug')!,
-			type: type || 'film',
-			name: (dataItem.attr('data-item-name') || dataItem.find('img').attr('alt'))!,
-			year: parseYearFromFullFilmTitle(dataItem.attr('data-item-full-display-name')),
-		});
+		const item = parseFilmsGridElement($, element);
+		items.push(item);
 	}
 	// parse pagination
 	const pagination = parsePagination($);
@@ -910,6 +893,28 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 		...pagination,
 	};
 };
+
+export const parseFilmsGridElement = ($: cheerio.CheerioAPI, element: Element): Film => {
+	const dataItem = $(element).find(' [data-item-slug]');
+	const dataItemPosteredId = dataItem.attr('data-postered-identifier');
+	let type: string | undefined;
+	if(dataItemPosteredId) {
+		try {
+			const postededId = JSON.parse(dataItemPosteredId);
+			type = postededId.type;
+		} catch(error) {
+			console.error(`Failed to parse postered id: ${dataItemPosteredId}`);
+		}
+	}
+	return {
+		id: dataItem.attr('data-film-id'),
+		href: dataItem.attr('data-item-link')!,
+		slug: dataItem.attr('data-item-slug')!,
+		type: type || 'film',
+		name: (dataItem.attr('data-item-name') || dataItem.find('img').attr('alt'))!,
+		year: parseYearFromFullFilmTitle(dataItem.attr('data-item-full-display-name')),
+	};
+}
 
 export const parseAjaxHrefFromFilmsPage = ($: cheerio.CheerioAPI): string | undefined => {
 	// check if films page is loaded via ajax
@@ -982,7 +987,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 	if(hasPosterList) {
 		for(const element of posterList.find('> li')) {
 			const elementTag = $(element);
-			const film = parseFilmPosterContainer(elementTag);
+			const film = parseFilmsGridElement($, element);
 			// parse order number
 			const orderNumStr = elementTag.find('.list-number').text();
 			let orderNum: number | undefined = undefined;
@@ -1005,9 +1010,8 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 			// add item
 			items.push({
 				id: (id ?? objectId)!,
-				order: orderNum!,
 				ownerRating: ownerRating as number,
-				film: film
+				film: film,
 			});
 		}
 	} else if(detailedList && detailedList.index() != -1) {
@@ -1065,7 +1069,6 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 			// add item
 			items.push({
 				id: (id ?? objectId)!,
-				order: orderNum!,
 				ownerRating: rating as number,
 				film: film,
 				notesText,
