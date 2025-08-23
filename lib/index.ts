@@ -10,6 +10,7 @@ import {
 	letterboxdHttpError,
 	letterboxdPageError,
 	FilmListPage,
+	Viewing,
 } from './types';
 import * as lbconstants from './constants';
 import * as lburls from './urls';
@@ -278,6 +279,37 @@ export const getUserFollowingFeed = async (username: string, options: GetUserFol
 
 export type GetReviewsURLOptions = lburls.ReviewsHrefOptions;
 
+const fetchFullReviewTextForViewings = async (viewings: Viewing[]) => {
+	let promises: Promise<void>[] = [];
+	for(const review of viewings) {
+		if((!review.text || review.hasMoreText || review.text.endsWith('…')) && review.fullTextHref) {
+			promises.push((async () => {
+				try {
+					const url = lburls.urlFromHref(review.fullTextHref!);
+					const {res:reviewRes,data:reviewResData} = await sendHttpRequest(url);
+					if(reviewResData) {
+						const $ = cheerio.load(`<body id="root">${reviewResData}</body>`);
+						const rootObj = $('#root');
+						const reviewResParagraphs = rootObj.find('> p');
+						let reviewResText: string;
+						if(reviewResParagraphs.index() == -1) {
+							reviewResText = rootObj.text();
+						} else {
+							reviewResText = reviewResParagraphs.toArray().map((p) => $(p).text()).join('\n');
+						}
+						if(reviewResText) {
+							review.text = reviewResText;
+						}
+					}
+				} catch(error) {
+					console.error(error);
+				}
+			})());
+		}
+	}
+	await Promise.allSettled(promises);
+};
+
 export const getReviews = async (urlOpts: GetReviewsURLOptions, options?: {
 	fetchFullText?: boolean,
 }): Promise<ReviewsPage> => {
@@ -286,33 +318,7 @@ export const getReviews = async (urlOpts: GetReviewsURLOptions, options?: {
 	const reviewsPage = lbparse.parseViewingListPage(resData);
 	const fullReviewTextPromises: (Promise<void>)[] = [];
 	if(options?.fetchFullText && reviewsPage?.items) {
-		for(const review of reviewsPage.items) {
-			if((!review.text || review.hasMoreText || review.text.endsWith('…')) && review.fullTextHref) {
-				fullReviewTextPromises.push((async () => {
-					try {
-						const url = lburls.urlFromHref(review.fullTextHref!);
-						const {res:reviewRes,data:reviewResData} = await sendHttpRequest(url);
-						if(reviewResData) {
-							const $ = cheerio.load(`<body id="root">${reviewResData}</body>`);
-							const rootObj = $('#root');
-							const reviewResParagraphs = rootObj.find('> p');
-							let reviewResText: string;
-							if(reviewResParagraphs.index() == -1) {
-								reviewResText = rootObj.text();
-							} else {
-								reviewResText = reviewResParagraphs.toArray().map((p) => $(p).text()).join('\n');
-							}
-							if(reviewResText) {
-								review.text = reviewResText;
-							}
-						}
-					} catch(error) {
-						console.error(error);
-					}
-				})());
-			}
-		}
-		await Promise.allSettled(fullReviewTextPromises);
+		await fetchFullReviewTextForViewings(reviewsPage.items);
 	}
 	return reviewsPage;
 };
