@@ -974,8 +974,10 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 	const publishedAt = contentNav.find('.published time').attr('datetime');
 	const updatedAt = contentNav.find('.updated time').attr('datetime');
 	// get item list
-	const posterList = $('ul.poster-list');
-	const hasPosterList = posterList.index() != -1;
+	let posterList = $('ul.poster-list');
+	let hasPosterList = posterList.index() != -1;
+	let posterGrid = $('.poster-grid ul.grid');
+	let hasPosterGrid = posterGrid.index() != -1;
 	let detailedList = !hasPosterList ? $('.list-detailed-entries-list') : null;
 	let isViewingList = false;
 	if(!hasPosterList && (!detailedList || detailedList.index() == -1)) {
@@ -984,8 +986,9 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 	}
 	// parse items
 	const items: FilmListItem[] = [];
-	if(hasPosterList) {
-		for(const element of posterList.find('> li')) {
+	const posterListOrGrid = hasPosterList ? posterList : (hasPosterGrid ? posterGrid : null);
+	if(posterListOrGrid) {
+		for(const element of posterListOrGrid.find('> li')) {
 			const elementTag = $(element);
 			const film = parseFilmsGridElement($, elementTag);
 			// parse order number
