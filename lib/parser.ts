@@ -1010,6 +1010,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 			// add item
 			items.push({
 				id: (id ?? objectId)!,
+				order: orderNum!,
 				ownerRating: ownerRating as number,
 				film: film,
 			});
@@ -1069,6 +1070,7 @@ export const parseFilmListPage = (pageData: cheerio.CheerioAPI | string): (FilmL
 			// add item
 			items.push({
 				id: (id ?? objectId)!,
+				order: orderNum!,
 				ownerRating: rating as number,
 				film: film,
 				notesText,
