@@ -880,9 +880,12 @@ export const parseFilmsPage = (pageData: cheerio.CheerioAPI | string): FilmsPage
 		$ = pageData;
 	}
 	// parse films
+	let filmPostersList = $('.poster-grid ul.grid');
+	if(filmPostersList.index() == -1) {
+		filmPostersList = $('ul.poster-list');
+	}
 	const items: Film[] = [];
-	const filmGridItems = $('.poster-grid ul.grid > li');
-	for(const element of filmGridItems) {
+	for(const element of filmPostersList.find('> li')) {
 		const item = parseFilmsGridElement($, $(element));
 		items.push(item);
 	}
