@@ -353,7 +353,7 @@ const createFilmPosterURLScaled = (filmId: string, filmSlug: string, width: stri
 	return createFilmPosterURL(filmId, filmSlug, widthVal, heightVal);
 };
 
-const parseCacheBusterURL = (url: string | undefined, busterKey: string): string | undefined => {
+export const parseCacheBusterURL = (url: string | undefined, busterKey: string): string | undefined => {
 	if(!url) {
 		return url;
 	}
@@ -375,9 +375,18 @@ const parseCacheBusterURL = (url: string | undefined, busterKey: string): string
 	return `${urlWithoutQuery}?${qs.stringify(query)}`;
 };
 
-export const parseFilmPosterPage = (pageData: string): Film => {
-	const $ = cheerio.load(`<body id="root">${pageData}</body>`);
-	return parseFilmPosterContainer($.root());
+export const parseFilmPosterPage = (pageData: string): {
+	url: string;
+	url2x: string;
+	shouldObfuscate: boolean;
+} | undefined => {
+	try {
+		return JSON.parse(pageData);
+	} catch(error) {
+		console.error(`Error parsing film poster page:`);
+		console.error(error);
+		return undefined;
+	}
 };
 
 export const parseFilmPosterContainer = (element: cheerio.Cheerio<any>): Film => {

@@ -5,7 +5,7 @@ import {
 	FilmPage,
 	ActivityFeedPage,
 	ReviewsPage,
-	PosterSize,
+	FilmPosterSize,
 	FilmsPage,
 	letterboxdHttpError,
 	letterboxdPageError,
@@ -45,8 +45,8 @@ const sendHttpRequest = async (url: string, options?: RequestInit): Promise<{res
 
 export type FilmURLOptions = lburls.FilmHrefOptions;
 export type GetFilmOptions = (FilmURLOptions | {tmdbId: string} | {imdbId: string}) & {
-	includeAjaxContent?: boolean;
-	relatedFilmsPosterSize?: PosterSize;
+	includeAjaxContent?: boolean,
+	relatedFilmsPosterSize?: FilmPosterSize,
 };
 
 export const getFilm = async (options: GetFilmOptions): Promise<FilmPage> => {
@@ -163,26 +163,31 @@ export const getFilmSlugFromExternalID = async (options: GetFilmFromExternalIDOp
 // Film Poster
 
 export type GetFilmPosterOptions = lburls.FilmHrefOptions & {
-	posterSize?: PosterSize
+	posterSize?: FilmPosterSize,
 };
 
-export const getFilmPoster = async (options: GetFilmPosterOptions): Promise<Film> => {
+export const getFilmPosterUrl = async (options: GetFilmPosterOptions): Promise<string | undefined> => {
 	const posterOpts = {...options};
 	if(!posterOpts.posterSize) {
-		posterOpts.posterSize = {width:150,height:225};
+		posterOpts.posterSize = FilmPosterSize.Thumb;
 	}
 	const url = lburls.filmPosterURL(posterOpts as lburls.FilmPosterURLOptions);
 	//console.log(`fetching poster from url ${url}`);
 	const {res,data:resData} = await sendHttpRequest(url);
-	return lbparse.parseFilmPosterPage(resData);
+	const poster = lbparse.parseFilmPosterPage(resData);
+	const posterUrl = poster?.url2x ?? poster?.url;
+	if(!posterUrl) {
+		return undefined;
+	}
+	return lbparse.parseCacheBusterURL(posterUrl, 'v');
 };
 
 const fetchFilmPostersForItems = async <TItem>(
 	items: TItem[],
 	forEachFilm: ((item: TItem, callback: (film: Film) => Promise<void>) => Promise<void>),
-	options: {posterSize?: PosterSize}): Promise<void> => {
+	options: {posterSize?: FilmPosterSize}): Promise<void> => {
 	// fetch film posters for all the items
-	const posterPromises: {[href: string]: Promise<Film>} = {};
+	const posterUrlPromises: {[href: string]: Promise<string | undefined>} = {};
 	await Promise.all(items.map(async (item) => {
 		// ensure item has a film
 		await forEachFilm(item, async (film) => {
@@ -194,22 +199,19 @@ const fetchFilmPostersForItems = async <TItem>(
 				return;
 			}
 			// fetch the poster or wait for task already in progress
-			let promise = posterPromises[filmHref];
+			let promise = posterUrlPromises[filmHref];
 			if(!promise) {
-				promise = getFilmPoster({
+				promise = getFilmPosterUrl({
 					href: filmHref,
 					posterSize: options.posterSize
 				});
-				posterPromises[filmHref] = promise;
+				posterUrlPromises[filmHref] = promise;
 			}
 			try {
-				const fetchedFilm = await promise;
-				// apply fetched data
-				if(fetchedFilm.imageURL) {
-					film.imageURL = fetchedFilm.imageURL;
-				}
-				if(fetchedFilm.year) {
-					film.year = fetchedFilm.year;
+				const fetchedImageUrl = await promise;
+				// apply fetched url
+				if(fetchedImageUrl) {
+					film.imageURL = fetchedImageUrl;
 				}
 			} catch(error) {
 				console.warn(error);
@@ -226,7 +228,7 @@ export type GetUserFollowingFeedOptions = {
 	after?: number | string | null | undefined,
 	csrf?: string | null | undefined,
 	includeAjaxContent?: boolean,
-	posterSize?: {width: number, height: number}
+	posterSize?: FilmPosterSize,
 };
 
 export const getUserFollowingFeed = async (username: string, options: GetUserFollowingFeedOptions = {}): Promise<ActivityFeedPage> => {
@@ -328,8 +330,8 @@ export const getReviews = async (urlOpts: GetReviewsURLOptions, options?: {
 // Films
 
 export type GetFilmsOptions = lburls.FilmsHrefOptions & {
-	includeAjaxContent?: boolean;
-	posterSize?: {width: number, height: number};
+	includeAjaxContent?: boolean,
+	posterSize?: FilmPosterSize,
 };
 
 export const getFilms = async (options: GetFilmsOptions): Promise<FilmsPage> => {
@@ -356,7 +358,7 @@ export const getFilms = async (options: GetFilmsOptions): Promise<FilmsPage> => 
 
 export type GetSimilarFilmsOptions = lburls.SimilarToFilmHrefOptions & {
 	includeAjaxContent?: boolean;
-	posterSize?: {width: number, height: number};
+	posterSize?: FilmPosterSize;
 };
 
 export const getSimilarFilms = async (options: GetSimilarFilmsOptions): Promise<FilmsPage> => {
@@ -374,7 +376,7 @@ export const getSimilarFilms = async (options: GetSimilarFilmsOptions): Promise<
 
 export type GetFilmListOptions = lburls.FilmListHrefOptions & {
 	includeAjaxContent?: boolean,
-	posterSize?: {width: number, height: number}
+	posterSize?: FilmPosterSize,
 };
 
 export const getFilmList = async (options: GetFilmListOptions): Promise<FilmListPage> => {

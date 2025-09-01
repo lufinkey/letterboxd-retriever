@@ -45,9 +45,8 @@ export type PageBackdrop = {
 	mobile: string
 };
 
-export type PosterSize = {
-	width: number;
-	height: number;
+export enum FilmPosterSize {
+	Thumb = 70
 };
 
 export type Pagination = {

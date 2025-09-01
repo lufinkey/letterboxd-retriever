@@ -1,6 +1,6 @@
 import { BASE_URL } from './constants';
 import { stringifyHrefFilterProps } from './href';
-import { PosterSize } from './types';
+import { FilmPosterSize } from './types';
 import {
 	FilmReviewsHrefArgs,
 	FilmsHrefArgs,
@@ -87,16 +87,16 @@ export const filmURL = (opts: FilmHrefOptions): string => {
 // Film Poster
 
 export type FilmPosterURLOptions = FilmHrefOptions & {
-	posterSize: PosterSize
+	posterSize: FilmPosterSize
 };
 
 export const filmPosterURL = (opts: FilmPosterURLOptions) => {
-	let url = `${BASE_URL}/ajax/poster`;
+	let url = BASE_URL;
 	url += filmHref(opts);
 	if(!url.endsWith('/')) {
 		url += '/';
 	}
-	url += `std/${opts.posterSize.width}x${opts.posterSize.height}`;
+	url += `poster/std/${opts.posterSize}/`;
 	return url;
 };
 
