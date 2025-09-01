@@ -476,7 +476,7 @@ export const parseHref = (href: string): HrefParts => {
 			// try to parse Year in Review href
 			if(base.length === 4) {
 				const year = Number.parseInt(base);
-				if(!Number.isNaN(year)) {
+				if(!year) {
 					const now = new Date();
 					const nowYear = Math.max(now.getFullYear(), now.getUTCFullYear());
 					if(year >= FirstYearInReview && year <= nowYear) {

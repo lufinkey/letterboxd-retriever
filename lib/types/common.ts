@@ -26,7 +26,7 @@ export type Film = {
 	type: 'film' | string;
 	name: string;
 	slug: string;
-	year?: string;
+	year?: number;
 	imageURL?: string | undefined;
 };
 

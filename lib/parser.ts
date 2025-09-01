@@ -305,7 +305,7 @@ export const parsePagination = ($: cheerio.CheerioAPI): Pagination => {
 	};
 };
 
-export const parseYearFromFullFilmTitle = (fullFilmTitle: string | undefined) => {
+export const parseYearFromFullFilmTitle = (fullFilmTitle: string | undefined): number | undefined => {
 	if(!fullFilmTitle || !fullFilmTitle.endsWith(')')) {
 		return undefined;
 	}
@@ -313,7 +313,11 @@ export const parseYearFromFullFilmTitle = (fullFilmTitle: string | undefined) =>
 	if(parenthStart == -1) {
 		return undefined;
 	}
-	return fullFilmTitle.substring(parenthStart+1, fullFilmTitle.length-1);
+	const year = Number.parseInt(fullFilmTitle.substring(parenthStart+1, fullFilmTitle.length-1));
+	if(!year) {
+		return undefined;
+	}
+	return year;
 };
 
 
@@ -404,7 +408,7 @@ export const parseFilmPosterElement = (posterTag: cheerio.Cheerio<any>): Film =>
 			href = `/${type}/${slug}/`;
 		}
 	}
-	let year = posterTag.attr('data-film-release-year');
+	let year: number | undefined = Number.parseInt(posterTag.attr('data-film-release-year') ?? '');
 	if(!year) {
 		const fullFilmTitle = posterTag.find('span[title]').attr('title');
 		year = parseYearFromFullFilmTitle(fullFilmTitle);
@@ -728,8 +732,11 @@ export const parseAjaxActivityFeed = (pageData: string): { items: ActivityFeedEn
 					console.warn(`Viewing href ${filmReviewHref} didn't have expected structure for entry ${entryIndex}\n\tfilmSlug: ${filmSlug}\n\tfilmSlugFromViewing: ${filmSlugFromViewing}`);
 				}
 				const filmName = filmReviewLink.text();
-				const filmYearLink = activityViewing.find('.body h2 > .metadata > a');
-				const filmYear = filmYearLink.text().trim();
+				const filmYearLink = activityViewing.find('.releasedate');
+				let filmYear: string | number | undefined = Number.parseInt(filmYearLink.text().trim());
+				if(!filmYear) {
+					filmYear = undefined;
+				}
 				const ratingTag = activityViewing.find('.body .rating');
 				let rating: number | undefined = undefined;
 				if(ratingTag.index() !== -1) {
